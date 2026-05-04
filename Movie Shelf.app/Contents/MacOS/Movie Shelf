@@ -1,0 +1,14 @@
+#!/bin/zsh
+
+APP_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$APP_DIR" || exit 1
+
+URL="http://localhost:5173/index.html"
+
+if curl -fsS --max-time 1 "$URL" >/dev/null 2>&1; then
+  open "$URL"
+  exit 0
+fi
+
+(sleep 1; open "$URL") &
+exec node server.js

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09090b" />
+    <title>NReel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="NReel navigation">
+        <div class="brand-lockup sidebar-brand">
+          <img class="nreel-logo-full" src="nreel-logo-full.svg" alt="NReel" />
+          <img class="nreel-logo-icon" src="nreel-icon.svg" alt="NReel" />
+        </div>
+
+        <nav class="tab-row side-nav" role="tablist" aria-label="NReel tabs">
+          <button class="tab-button side-nav-button tab-active" type="button" data-tab="movies" role="tab" aria-selected="true">
+            <span aria-hidden="true">▱</span> Watch
+          </button>
+          <button class="tab-button side-nav-button" type="button" data-tab="reverse" role="tab" aria-selected="false">
+            <span aria-hidden="true">◇</span> Box
+          </button>
+          <button class="side-nav-button side-nav-muted" type="button">
+            <span aria-hidden="true">⚙</span> Settings
+          </button>
+        </nav>
+
+        <div class="sidebar-user">
+          <span>NR</span>
+          <strong>NReel User</strong>
+        </div>
+      </aside>
+
+      <div class="main-column">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Watch</p>
+            <h1>Watch</h1>
+            <p class="page-subtitle">Discover movies that stay with you, always.</p>
+          </div>
+          <div class="top-actions">
+            <label class="search-box">
+              <span>検索</span>
+              <input id="searchInput" type="search" placeholder="Search movies..." />
+            </label>
+            <button class="primary-button list-add-button" id="openFormButton" type="button"><span aria-hidden="true">＋</span> Add Movie</button>
+          </div>
+        </header>
+
+        <section class="workspace">
+          <div class="form-backdrop hidden" id="formBackdrop"></div>
+          <div class="dialog-backdrop hidden" id="confirmBackdrop"></div>
+          <div class="dialog-backdrop hidden" id="detailBackdrop"></div>
+
+          <section class="confirm-dialog hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <div>
+              <p class="eyebrow">Confirm</p>
+              <h2 id="confirmTitle">削除しますか？</h2>
+            </div>
+            <p class="confirm-message" id="confirmMessage"></p>
+            <div class="confirm-actions">
+              <button class="ghost-button" id="confirmCancelButton" type="button">キャンセル</button>
+              <button class="primary-button danger-confirm-button" id="confirmOkButton" type="button">削除する</button>
+            </div>
+          </section>
+
+          <section class="detail-dialog hidden" id="movieDetailDialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+            <div class="detail-heading">
+              <div>
+                <p class="eyebrow">Movie Detail</p>
+                <h2 id="detailTitle"></h2>
+              </div>
+              <button class="icon-button close-button" id="closeDetailButton" type="button" title="閉じる" aria-label="閉じる">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+            <div class="detail-content">
+              <div class="detail-poster" id="detailPoster">
+                <img alt="" id="detailPosterImage" />
+                <span id="detailPosterFallback">NO IMAGE</span>
+              </div>
+              <div class="detail-main">
+                <dl class="detail-fields" id="detailFields"></dl>
+                <section class="detail-section">
+                  <h3>概要</h3>
+                  <p id="detailDescription"></p>
+                </section>
+                <section class="detail-section">
+                  <h3>メモ</h3>
+                  <p id="detailNote"></p>
+                </section>
+              </div>
+            </div>
+            <div class="detail-actions">
+              <button class="ghost-button" id="detailEditButton" type="button">編集</button>
+              <button class="ghost-button danger-button" id="detailDeleteButton" type="button">削除</button>
+            </div>
+          </section>
+
+          <form class="movie-form" id="movieForm">
+            <div class="form-heading">
+              <h2 id="formTitle">映画を追加</h2>
+              <div class="form-heading-actions">
+                <button class="ghost-button hidden" id="cancelEditButton" type="button">編集をやめる</button>
+                <button class="icon-button close-button" id="closeFormButton" type="button" title="閉じる" aria-label="閉じる">
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+            </div>
+
+            <label>
+              作品ページURL
+              <div class="url-input-row">
+                <input id="sourceUrlInput" name="sourceUrl" type="url" placeholder="https://..." />
+                <button class="primary-button fetch-button" id="fetchInfoButton" type="button">URLから取得</button>
+              </div>
+            </label>
+            <input id="posterUrlInput" name="posterUrl" type="hidden" />
+
+            <label>
+              タイトル
+              <div class="fetchable-input-row">
+                <input id="titleInput" name="title" type="text" placeholder="例: 花束みたいな恋をした" required />
+                <button class="primary-button fetch-button" id="fetchTitleInfoButton" type="button">タイトルから取得</button>
+              </div>
+            </label>
+
+            <div class="field-grid">
+              <label>
+                監督
+                <input id="directorInput" name="director" type="text" placeholder="自動取得、または手入力" />
+              </label>
+              <label>
+                公開日
+                <input id="releaseDateInput" name="releaseDate" type="date" />
+              </label>
+            </div>
+
+            <label>
+              公開終了日
+              <input id="releaseEndDateInput" name="releaseEndDate" type="date" />
+            </label>
+
+            <label>
+              ジャンル
+              <input id="genreInput" name="genre" type="text" placeholder="自動取得、または手入力" />
+            </label>
+
+            <label>
+              主演・キャスト
+              <input id="castInput" name="cast" type="text" placeholder="自動取得、または手入力" />
+            </label>
+
+            <label>
+              概要
+              <textarea id="descriptionInput" name="description" rows="3" placeholder="作品ページから取得した概要、または自分用の短いあらすじ"></textarea>
+            </label>
+
+            <label>
+              メモ
+              <textarea id="noteInput" name="note" rows="4" placeholder="気になった理由、同時上映、誰と見るかなど"></textarea>
+            </label>
+
+            <button class="primary-button" id="submitButton" type="submit">追加する</button>
+          </form>
+
+          <section class="list-panel tab-panel" id="moviesPanel" data-tab="movies">
+            <div class="tool-row movie-filter-row">
+              <div class="filter-pills" aria-label="Movie filters">
+                <button class="filter-pill filter-pill-active" type="button">All <span id="allMovieCount">0</span></button>
+                <button class="filter-pill" type="button">Watch</button>
+                <button class="filter-pill" type="button">Analyze</button>
+                <button class="filter-pill" type="button">Understand</button>
+              </div>
+              <label>
+                <span>並び順</span>
+                <select id="sortSelect">
+                  <option value="createdDesc">Recently Added</option>
+                  <option value="titleAsc">Title</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="movie-list" id="movieList" aria-live="polite"></div>
+            <p class="empty-state hidden" id="emptyState">条件に合う映画がありません。</p>
+            <p class="movie-count" id="movieCount">0 movies</p>
+          </section>
+
+          <section class="list-panel tab-panel hidden" id="reversePanel" data-tab="reverse" aria-label="15ビート逆箱">
+            <div class="tool-row">
+              <div>
+                <h2>15ビート逆箱</h2>
+                <p class="meta-line">動画URL / 動画ファイル名と対象映画・逆箱を保存できます。</p>
+              </div>
+              <div class="reverse-summary">
+                <span id="reverseCount">0</span>
+                <small>保存済み</small>
+              </div>
+            </div>
+
+            <form class="reverse-form" id="reverseForm">
+              <div class="field-grid">
+                <label>
+                  参照動画URL
+                  <input id="referenceUrlInput" name="referenceUrl" type="url" placeholder="https://..." />
+                </label>
+                <label>
+                  参照動画ファイル
+                  <div class="file-picker">
+                    <input id="referenceFileInput" name="referenceFile" type="file" accept="video/*" />
+                    <div class="file-name" id="referenceFileName"></div>
+                  </div>
+                </label>
+              </div>
+
+              <label>
+                対象映画タイトル
+                <input id="reverseTitleInput" name="reverseTitle" type="text" placeholder="例: きっと、うまくいく" required />
+              </label>
+
+              <label>
+                15ビートの逆箱
+                <textarea id="reverseBeatsInput" name="reverseBeats" rows="5" placeholder="15ビートの逆箱をここに入力します。" required></textarea>
+              </label>
+
+              <label>
+                備考
+                <textarea id="reverseNoteInput" name="reverseNote" rows="3" placeholder="参考メモや英語のポイントなど"></textarea>
+              </label>
+
+              <button class="primary-button" id="saveReverseBeatButton" type="button">保存する</button>
+            </form>
+
+            <div class="reverse-list" id="reverseList" aria-live="polite"></div>
+            <p class="empty-state hidden" id="reverseEmptyState">逆箱がありません。上のフォームで追加してください。</p>
+          </section>
+        </section>
+      </div>
+    </main>
+
+    <template id="movieTemplate">
+      <article class="movie-item">
+        <div class="movie-poster">
+          <img alt="" />
+          <span>NO IMAGE</span>
+        </div>
+        <div class="item-main">
+          <div class="title-row">
+            <h3></h3>
+          </div>
+          <p class="description-line"></p>
+          <p class="note-line"></p>
+        </div>
+      </article>
+    </template>
+
+    <template id="reverseBeatTemplate">
+      <article class="reverse-item">
+        <div class="item-main">
+          <div class="title-row">
+            <h3></h3>
+            <span class="priority-badge reverse-badge">逆箱</span>
+          </div>
+          <p class="beat-meta"></p>
+          <p class="note-line reverse-beats"></p>
+          <p class="note-line reverse-note"></p>
+        </div>
+        <div class="item-actions">
+          <button class="small-button danger-button delete-button" type="button">削除</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>

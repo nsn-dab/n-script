@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Movie Shelf logo</title>
+  <desc id="desc">An animated red monogram with cinematic shelf lines.</desc>
+  <defs>
+    <linearGradient id="redGlow" x1="74" y1="66" x2="438" y2="446" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff3340"/>
+      <stop offset=".48" stop-color="#e50914"/>
+      <stop offset="1" stop-color="#8d050b"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="-120" y1="0" x2="120" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".48" stop-color="#fff" stop-opacity=".75"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      <animateTransform attributeName="gradientTransform" type="translate" from="-220 0" to="700 0" dur="3.2s" repeatCount="indefinite"/>
+    </linearGradient>
+    <filter id="softRed" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.9  0 0 0 0 0.02  0 0 0 0 0.04  0 0 0 .7 0"/>
+    </filter>
+    <style>
+      .mark {
+        transform-origin: 256px 256px;
+        animation: breathe 4.2s ease-in-out infinite;
+      }
+
+      .draw {
+        stroke-dasharray: 760;
+        stroke-dashoffset: 760;
+        animation: draw 1.25s ease-out .15s forwards;
+      }
+
+      .shelf {
+        transform-origin: 256px 256px;
+        animation: shelfPulse 2.8s ease-in-out infinite;
+      }
+
+      .shelf.two {
+        animation-delay: .18s;
+      }
+
+      .shelf.three {
+        animation-delay: .36s;
+      }
+
+      @keyframes breathe {
+        0%, 100% { transform: scale(1); filter: drop-shadow(0 18px 38px rgba(229, 9, 20, .28)); }
+        50% { transform: scale(1.018); filter: drop-shadow(0 24px 54px rgba(229, 9, 20, .42)); }
+      }
+
+      @keyframes draw {
+        to { stroke-dashoffset: 0; }
+      }
+
+      @keyframes shelfPulse {
+        0%, 100% { opacity: .92; transform: translateX(0); }
+        50% { opacity: 1; transform: translateX(8px); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .mark,
+        .draw,
+        .shelf {
+          animation: none;
+        }
+      }
+    </style>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="#09090b"/>
+  <path d="M106 256c0-83 67-150 150-150s150 67 150 150-67 150-150 150-150-67-150-150Z" fill="#e50914" opacity=".22" filter="url(#softRed)">
+    <animate attributeName="opacity" values=".16;.3;.16" dur="4.2s" repeatCount="indefinite"/>
+  </path>
+
+  <g class="mark">
+    <path d="M104 388V124h78l74 146 74-146h78v264h-68V232l-62 122h-44l-62-122v156h-68Z" fill="url(#redGlow)"/>
+    <path class="draw" d="M104 388V124h78l74 146 74-146h78v264" fill="none" stroke="#ff5963" stroke-width="10" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>
+    <path d="M104 124h304v264H104z" fill="url(#shine)" opacity=".38"/>
+  </g>
+
+  <g fill="none" stroke="#f5f5f6" stroke-linecap="round" stroke-width="18">
+    <path class="shelf one" d="M154 178h72"/>
+    <path class="shelf two" d="M154 256h55"/>
+    <path class="shelf three" d="M154 334h72"/>
+  </g>
+</svg>

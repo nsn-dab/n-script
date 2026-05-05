@@ -43,6 +43,7 @@ let selectedReferenceFileName = "";
 let pendingConfirmAction = null;
 let detailMovieId = null;
 let currentStatusFilter = "all";
+let formStatus = "";
 
 const form = document.querySelector("#movieForm");
 const openFormButton = document.querySelector("#openFormButton");
@@ -80,6 +81,8 @@ const template = document.querySelector("#movieTemplate");
 const searchInput = document.querySelector("#searchInput");
 const sortSelect = document.querySelector("#sortSelect");
 const statusFilterButtons = document.querySelectorAll("[data-status-filter]");
+const formStatusButtons = document.querySelectorAll("[data-form-status]");
+const detailStatusButtons = document.querySelectorAll("[data-detail-status]");
 const fetchInfoButton = document.querySelector("#fetchInfoButton");
 const fetchTitleInfoButton = document.querySelector("#fetchTitleInfoButton");
 const pageTitle = document.querySelector("#pageTitle");
@@ -128,7 +131,10 @@ const reverseInputs = {
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  const payload = Object.fromEntries(Object.entries(inputs).map(([key, input]) => [key, input.value.trim()]));
+  const payload = {
+    ...Object.fromEntries(Object.entries(inputs).map(([key, input]) => [key, input.value.trim()])),
+    status: formStatus,
+  };
 
   if (editingId) {
     movies = movies.map((movie) => (movie.id === editingId ? { ...movie, ...payload } : movie));
@@ -137,6 +143,7 @@ form.addEventListener("submit", (event) => {
     movies.unshift({ id: crypto.randomUUID(), ...payload, createdAt: Date.now() });
     form.reset();
     inputs.posterUrl.value = "";
+    setFormStatus("");
   }
 
   closeForm();
@@ -156,6 +163,8 @@ cancelEditButton.addEventListener("click", () => {
 searchInput.addEventListener("input", render);
 sortSelect.addEventListener("change", render);
 statusFilterButtons.forEach((button) => button.addEventListener("click", () => setStatusFilter(button.dataset.statusFilter)));
+formStatusButtons.forEach((button) => button.addEventListener("click", () => setFormStatus(button.dataset.formStatus)));
+detailStatusButtons.forEach((button) => button.addEventListener("click", () => setDetailStatus(button.dataset.detailStatus)));
 fetchInfoButton.addEventListener("click", fetchMovieInfo);
 fetchTitleInfoButton.addEventListener("click", fetchMovieInfoByTitle);
 saveReverseBeatButton.addEventListener("click", saveReverseBeat);
@@ -317,6 +326,27 @@ function renderStatusButton(button, movie) {
   button.innerHTML = getCheckIcon();
 }
 
+function setFormStatus(status) {
+  formStatus = normalizeMovieStatus(status);
+  formStatusButtons.forEach((button) => {
+    button.classList.toggle("status-choice-active", button.dataset.formStatus === formStatus);
+  });
+}
+
+function setDetailStatus(status) {
+  if (!detailMovieId) return;
+  const normalized = normalizeMovieStatus(status);
+  updateMovieStatus(detailMovieId, normalized);
+  renderDetailStatus(normalized);
+}
+
+function renderDetailStatus(status) {
+  const normalized = normalizeMovieStatus(status);
+  detailStatusButtons.forEach((button) => {
+    button.classList.toggle("status-choice-active", button.dataset.detailStatus === normalized);
+  });
+}
+
 function toggleWatchedStatus(event, movie) {
   event.stopPropagation();
   updateMovieStatus(movie.id, movie.status === "watched" ? "" : "watched");
@@ -357,6 +387,7 @@ function startEditing(id) {
   Object.entries(inputs).forEach(([key, input]) => {
     input.value = movie[key] || "";
   });
+  setFormStatus(movie.status);
   formTitle.textContent = "映画を編集";
   submitButton.textContent = "更新する";
   cancelEditButton.classList.remove("hidden");
@@ -367,6 +398,7 @@ function stopEditing() {
   editingId = null;
   form.reset();
   inputs.posterUrl.value = "";
+  setFormStatus("");
   formTitle.textContent = "映画を追加";
   submitButton.textContent = "追加する";
   cancelEditButton.classList.add("hidden");
@@ -391,6 +423,7 @@ function openMovieDetail(id) {
   detailMovieId = id;
   renderDetailTitle(movie.title);
   detailMeta.textContent = buildDetailMeta(movie);
+  renderDetailStatus(movie.status);
   detailDescription.textContent = movie.description || "概要なし";
   detailDescription.classList.toggle("muted-empty", !movie.description);
   detailNote.textContent = movie.note || "メモなし";

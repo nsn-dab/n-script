@@ -102,10 +102,6 @@
                   <h2 id="detailTitle"></h2>
                   <p class="detail-meta" id="detailMeta"></p>
                 </div>
-                <div class="detail-actions">
-                  <button class="primary-button" id="detailEditButton" type="button">編集する</button>
-                  <button class="ghost-button danger-button" id="detailDeleteButton" type="button">削除する</button>
-                </div>
                 <section class="detail-section">
                   <h3>概要</h3>
                   <p id="detailDescription"></p>
@@ -115,6 +111,16 @@
                   <h3>メモ</h3>
                   <p id="detailNote"></p>
                 </section>
+                <div class="detail-footer-actions">
+                  <div class="status-choice-group" aria-label="視聴状態">
+                    <button class="status-choice-button" type="button" data-detail-status="">未視聴</button>
+                    <button class="status-choice-button" type="button" data-detail-status="watched">視聴済み</button>
+                  </div>
+                  <div class="detail-actions">
+                    <button class="primary-button" id="detailEditButton" type="button">編集する</button>
+                    <button class="ghost-button danger-button" id="detailDeleteButton" type="button">削除する</button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -146,6 +152,14 @@
                 <button class="primary-button fetch-button" id="fetchTitleInfoButton" type="button">タイトルから取得</button>
               </div>
             </label>
+
+            <div class="form-status-field">
+              <span>視聴状態</span>
+              <div class="status-choice-group" aria-label="視聴状態">
+                <button class="status-choice-button" type="button" data-form-status="">未視聴</button>
+                <button class="status-choice-button" type="button" data-form-status="watched">視聴済み</button>
+              </div>
+            </div>
 
             <div class="field-grid">
               <label>

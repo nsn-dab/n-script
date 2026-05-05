@@ -418,13 +418,16 @@ h3 {
   stroke-width: 2;
 }
 .status-unwatched {
-  color: rgba(255,255,255,.45);
-  opacity: .74;
+  color: rgba(255,255,255,.34);
+  background: rgba(8,8,10,.34);
+  border-color: rgba(255,255,255,.08);
+  opacity: .66;
 }
 .status-watched {
-  color: #fff;
-  background: rgba(255,255,255,.12);
-  border-color: rgba(255,255,255,.24);
+  color: #050506;
+  background: rgba(255,255,255,.9);
+  border-color: rgba(255,255,255,.62);
+  box-shadow: 0 12px 28px rgba(0,0,0,.34), 0 0 0 1px rgba(255,255,255,.18);
 }
 .status-button:hover {
   border-color: rgba(255,255,255,.28);

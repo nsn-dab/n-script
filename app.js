@@ -74,6 +74,8 @@ const movieList = document.querySelector("#movieList");
 const emptyState = document.querySelector("#emptyState");
 const movieCount = document.querySelector("#movieCount");
 const allMovieCount = document.querySelector("#allMovieCount");
+const unwatchedMovieCount = document.querySelector("#unwatchedMovieCount");
+const watchedMovieCount = document.querySelector("#watchedMovieCount");
 const template = document.querySelector("#movieTemplate");
 const searchInput = document.querySelector("#searchInput");
 const sortSelect = document.querySelector("#sortSelect");
@@ -247,7 +249,7 @@ function render() {
   movieList.innerHTML = "";
   emptyState.classList.toggle("hidden", visibleMovies.length > 0);
   movieCount.textContent = `${visibleMovies.length} movies`;
-  allMovieCount.textContent = movies.length;
+  updateMovieStatusCounts();
 
   visibleMovies.forEach((movie) => {
     const item = template.content.firstElementChild.cloneNode(true);
@@ -273,6 +275,13 @@ function render() {
     });
     movieList.append(item);
   });
+}
+
+function updateMovieStatusCounts() {
+  const watchedCount = movies.filter((movie) => movie.status === "watched").length;
+  allMovieCount.textContent = movies.length;
+  watchedMovieCount.textContent = watchedCount;
+  unwatchedMovieCount.textContent = movies.length - watchedCount;
 }
 
 function getVisibleMovies() {

@@ -55,6 +55,7 @@ const confirmOkButton = document.querySelector("#confirmOkButton");
 const movieDetailDialog = document.querySelector("#movieDetailDialog");
 const closeDetailButton = document.querySelector("#closeDetailButton");
 const detailTitle = document.querySelector("#detailTitle");
+const detailMeta = document.querySelector("#detailMeta");
 const detailPoster = document.querySelector("#detailPoster");
 const detailPosterImage = document.querySelector("#detailPosterImage");
 const detailPosterFallback = document.querySelector("#detailPosterFallback");
@@ -75,6 +76,8 @@ const searchInput = document.querySelector("#searchInput");
 const sortSelect = document.querySelector("#sortSelect");
 const fetchInfoButton = document.querySelector("#fetchInfoButton");
 const fetchTitleInfoButton = document.querySelector("#fetchTitleInfoButton");
+const pageTitle = document.querySelector("#pageTitle");
+const pageSubtitle = document.querySelector("#pageSubtitle");
 const reverseList = document.querySelector("#reverseList");
 const reverseCount = document.querySelector("#reverseCount");
 const reverseTemplate = document.querySelector("#reverseBeatTemplate");
@@ -84,6 +87,17 @@ const saveReverseBeatButton = document.querySelector("#saveReverseBeatButton");
 const cancelReverseEditButton = document.querySelector("#cancelReverseEditButton");
 const tabButtons = document.querySelectorAll(".tab-button[data-tab]");
 const tabPanels = document.querySelectorAll(".tab-panel");
+
+const tabCopy = {
+  movies: {
+    title: "Watch",
+    subtitle: "心がときめく映画を一緒に見つけよう。",
+  },
+  reverse: {
+    title: "Box",
+    subtitle: "物語の構造をほどいて、次の創作に残しておこう。",
+  },
+};
 
 const inputs = {
   title: document.querySelector("#titleInput"),
@@ -205,6 +219,9 @@ function saveReverseBeats() {
 }
 
 function switchTab(tabName) {
+  const copy = tabCopy[tabName] || tabCopy.movies;
+  pageTitle.textContent = copy.title;
+  pageSubtitle.textContent = copy.subtitle;
   tabButtons.forEach((button) => {
     const selected = button.dataset.tab === tabName;
     button.classList.toggle("tab-active", selected);
@@ -324,6 +341,7 @@ function openMovieDetail(id) {
   if (!movie) return;
   detailMovieId = id;
   detailTitle.textContent = movie.title;
+  detailMeta.textContent = buildDetailMeta(movie);
   detailDescription.textContent = movie.description || "概要なし";
   detailDescription.classList.toggle("muted-empty", !movie.description);
   detailNote.textContent = movie.note || "メモなし";
@@ -334,6 +352,11 @@ function openMovieDetail(id) {
   detailBackdrop.classList.remove("hidden");
   document.body.classList.add("dialog-open");
   setTimeout(() => closeDetailButton.focus(), 0);
+}
+
+function buildDetailMeta(movie) {
+  const year = normalizeDateInput(movie.releaseDate).split("-")[0] || "";
+  return [year, movie.genre, movie.director].filter(Boolean).join(" ・ ") || "登録情報なし";
 }
 
 function renderDetailFields(movie) {

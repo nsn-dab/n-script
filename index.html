@@ -51,8 +51,8 @@
       <div class="main-column">
         <header class="topbar">
           <div>
-            <h1>Watch</h1>
-            <p class="page-subtitle">Discover movies that stay with you, always.</p>
+            <h1 id="pageTitle">Watch</h1>
+            <p class="page-subtitle" id="pageSubtitle">心がときめく映画を一緒に見つけよう。</p>
           </div>
           <div class="top-actions">
             <label class="search-box">
@@ -86,12 +86,9 @@
 
           <section class="detail-dialog hidden" id="movieDetailDialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
             <div class="detail-heading">
-              <div>
-                <p class="eyebrow">Movie Detail</p>
-                <h2 id="detailTitle"></h2>
-              </div>
-              <button class="icon-button close-button" id="closeDetailButton" type="button" title="閉じる" aria-label="閉じる">
-                <span aria-hidden="true">×</span>
+              <button class="detail-back-button" id="closeDetailButton" type="button">
+                <span aria-hidden="true">←</span>
+                戻る
               </button>
             </div>
             <div class="detail-content">
@@ -100,20 +97,25 @@
                 <span id="detailPosterFallback">NO IMAGE</span>
               </div>
               <div class="detail-main">
-                <dl class="detail-fields" id="detailFields"></dl>
+                <div class="detail-title-block">
+                  <p class="eyebrow">Movie Detail</p>
+                  <h2 id="detailTitle"></h2>
+                  <p class="detail-meta" id="detailMeta"></p>
+                </div>
+                <div class="detail-actions">
+                  <button class="primary-button" id="detailEditButton" type="button">編集する</button>
+                  <button class="ghost-button danger-button" id="detailDeleteButton" type="button">削除する</button>
+                </div>
                 <section class="detail-section">
                   <h3>概要</h3>
                   <p id="detailDescription"></p>
                 </section>
+                <dl class="detail-fields" id="detailFields"></dl>
                 <section class="detail-section">
                   <h3>メモ</h3>
                   <p id="detailNote"></p>
                 </section>
               </div>
-            </div>
-            <div class="detail-actions">
-              <button class="ghost-button" id="detailEditButton" type="button">編集</button>
-              <button class="ghost-button danger-button" id="detailDeleteButton" type="button">削除</button>
             </div>
           </section>
 

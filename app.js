@@ -73,7 +73,6 @@ const submitButton = document.querySelector("#submitButton");
 const cancelEditButton = document.querySelector("#cancelEditButton");
 const movieList = document.querySelector("#movieList");
 const emptyState = document.querySelector("#emptyState");
-const movieCount = document.querySelector("#movieCount");
 const allMovieCount = document.querySelector("#allMovieCount");
 const unwatchedMovieCount = document.querySelector("#unwatchedMovieCount");
 const watchedMovieCount = document.querySelector("#watchedMovieCount");
@@ -87,6 +86,7 @@ const fetchInfoButton = document.querySelector("#fetchInfoButton");
 const fetchTitleInfoButton = document.querySelector("#fetchTitleInfoButton");
 const pageTitle = document.querySelector("#pageTitle");
 const pageSubtitle = document.querySelector("#pageSubtitle");
+const topActions = document.querySelector(".top-actions");
 const reverseList = document.querySelector("#reverseList");
 const reverseCount = document.querySelector("#reverseCount");
 const reverseTemplate = document.querySelector("#reverseBeatTemplate");
@@ -243,6 +243,7 @@ function switchTab(tabName) {
   const copy = tabCopy[tabName] || tabCopy.movies;
   pageTitle.textContent = copy.title;
   pageSubtitle.textContent = copy.subtitle;
+  topActions.classList.toggle("hidden", tabName !== "movies");
   tabButtons.forEach((button) => {
     const selected = button.dataset.tab === tabName;
     button.classList.toggle("tab-active", selected);
@@ -257,7 +258,6 @@ function render() {
   const visibleMovies = getVisibleMovies();
   movieList.innerHTML = "";
   emptyState.classList.toggle("hidden", visibleMovies.length > 0);
-  movieCount.textContent = `${visibleMovies.length} movies`;
   updateMovieStatusCounts();
 
   visibleMovies.forEach((movie) => {

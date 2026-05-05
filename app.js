@@ -269,6 +269,7 @@ function render() {
     const statusButton = item.querySelector(".status-button");
 
     item.tabIndex = 0;
+    item.classList.toggle("movie-watched", movie.status === "watched");
     item.setAttribute("role", "button");
     item.setAttribute("aria-label", `${movie.title} の詳細を開く`);
     setPoster(poster, posterImage, posterFallback, movie);

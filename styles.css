@@ -289,10 +289,10 @@ input:focus, select:focus, textarea:focus {
 }
 .filter-pill span { margin-left: 12px; color: #fff; font-weight: 650; }
 .filter-pill-active {
-  border-color: rgba(224,0,18,.56);
+  border-color: rgba(224,0,18,.46);
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  box-shadow: 0 14px 30px rgba(168,0,14,.24);
+  background: linear-gradient(135deg, rgba(224,0,18,.72), rgba(168,0,14,.46));
+  box-shadow: 0 14px 30px rgba(168,0,14,.18);
 }
 
 .movie-list {
@@ -327,7 +327,7 @@ input:focus, select:focus, textarea:focus {
 .movie-item:hover {
   border-color: rgba(255,255,255,.14);
   box-shadow: 0 20px 42px rgba(0,0,0,.32);
-  transform: translateY(-3px);
+  transform: translateY(-3px) scale(1.01);
 }
 
 .movie-item:focus-visible {
@@ -358,8 +358,8 @@ input:focus, select:focus, textarea:focus {
   z-index: 2;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(0,0,0,0) 12%, rgba(0,0,0,.24) 34%, rgba(0,0,0,.78) 68%, rgba(0,0,0,.97) 100%),
-    linear-gradient(0deg, rgba(0,0,0,.56), transparent 52%);
+    linear-gradient(180deg, rgba(0,0,0,0) 46%, rgba(0,0,0,.54) 74%, rgba(0,0,0,.92) 100%),
+    linear-gradient(0deg, rgba(0,0,0,.44), transparent 48%);
 }
 
 .item-main {
@@ -385,6 +385,87 @@ h3 {
 .movie-card-title-sub { display: block; }
 .movie-card-title-main { font-size: 1em; line-height: 1.2; }
 .movie-card-title-sub { color: rgba(255,255,255,.72); font-size: .74em; font-weight: 520; line-height: 1.25; }
+
+.movie-card-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-button,
+.movie-menu-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(8,8,10,.58);
+  box-shadow: 0 12px 26px rgba(0,0,0,.28);
+  backdrop-filter: blur(10px);
+}
+.status-button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.status-want { color: #fff; background: rgba(224,0,18,.48); border-color: rgba(255,71,87,.34); }
+.status-watched { color: #f3f4f6; }
+.status-interested { color: #fbbf24; }
+.status-interested svg { fill: currentColor; stroke-width: 1.6; }
+.movie-menu-button {
+  opacity: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+  transform: translateY(-2px);
+  transition: opacity .15s ease, transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.movie-item:hover .movie-menu-button,
+.movie-item:focus-within .movie-menu-button {
+  opacity: 1;
+  transform: translateY(0);
+}
+.status-button:hover,
+.movie-menu-button:hover {
+  border-color: rgba(255,255,255,.28);
+  background: rgba(255,255,255,.11);
+}
+.movie-status-menu {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  display: grid;
+  width: 172px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background: rgba(10,10,12,.94);
+  box-shadow: 0 24px 54px rgba(0,0,0,.46);
+  backdrop-filter: blur(16px);
+}
+.movie-status-menu button {
+  min-height: 38px;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  padding: 0 13px;
+  color: rgba(255,255,255,.84);
+  background: transparent;
+  font-size: .82rem;
+  font-weight: 650;
+  text-align: left;
+}
+.movie-status-menu button:last-child { border-bottom: 0; }
+.movie-status-menu button:hover { color: #fff; background: rgba(255,255,255,.08); }
+.movie-status-menu .status-menu-danger { color: #fb7185; }
 
 .description-line, .note-line { margin-bottom: 0; overflow-wrap: anywhere; }
 .description-line {
@@ -592,6 +673,10 @@ h3 {
     transition: none;
     transform: none;
   }
+}
+
+@media (hover: none) {
+  .movie-menu-button { opacity: 1; transform: none; }
 }
 
 .movie-form {

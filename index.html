@@ -189,10 +189,10 @@
           <section class="list-panel tab-panel" id="moviesPanel" data-tab="movies">
             <div class="tool-row movie-filter-row">
               <div class="filter-pills" aria-label="Movie filters">
-                <button class="filter-pill filter-pill-active" type="button">All <span id="allMovieCount">0</span></button>
-                <button class="filter-pill" type="button">Watch</button>
-                <button class="filter-pill" type="button">Analyze</button>
-                <button class="filter-pill" type="button">Understand</button>
+                <button class="filter-pill filter-pill-active" type="button" data-status-filter="all">すべて <span id="allMovieCount">0</span></button>
+                <button class="filter-pill" type="button" data-status-filter="want">観たい</button>
+                <button class="filter-pill" type="button" data-status-filter="watched">観た</button>
+                <button class="filter-pill" type="button" data-status-filter="interested">気になる</button>
               </div>
               <label>
                 <span>並び順</span>
@@ -273,8 +273,10 @@
           <div class="title-row">
             <h3></h3>
           </div>
-          <p class="description-line"></p>
-          <p class="note-line"></p>
+        </div>
+        <div class="movie-card-controls">
+          <button class="status-button" type="button" aria-label="ステータスを変更"></button>
+          <button class="movie-menu-button" type="button" aria-label="その他の操作">…</button>
         </div>
       </article>
     </template>

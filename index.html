@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#09090b" />
     <title>NReel</title>
+    <link rel="icon" type="image/png" href="nreel-icon.png" />
+    <link rel="apple-touch-icon" href="nreel-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -12,19 +14,31 @@
     <main class="app-shell">
       <aside class="sidebar" aria-label="NReel navigation">
         <div class="brand-lockup sidebar-brand">
-          <img class="nreel-logo-full" src="nreel-logo-full.svg" alt="NReel" />
-          <img class="nreel-logo-icon" src="nreel-icon.svg" alt="NReel" />
+          <img class="nreel-logo-full" src="nreel-logo-full.png" alt="NReel" />
+          <img class="nreel-logo-icon" src="nreel-icon.png" alt="NReel" />
         </div>
 
         <nav class="tab-row side-nav" role="tablist" aria-label="NReel tabs">
           <button class="tab-button side-nav-button tab-active" type="button" data-tab="movies" role="tab" aria-selected="true">
-            <span aria-hidden="true">▱</span> Watch
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 4.75h10a1.75 1.75 0 0 1 1.75 1.75v13.2l-6.75-3.9-6.75 3.9V6.5A1.75 1.75 0 0 1 7 4.75Z" />
+            </svg>
+            Watch
           </button>
           <button class="tab-button side-nav-button" type="button" data-tab="reverse" role="tab" aria-selected="false">
-            <span aria-hidden="true">◇</span> Box
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3.6 7.25 4.1v8.55L12 20.4l-7.25-4.15V7.7L12 3.6Z" />
+              <path d="m5.1 8.05 6.9 4 6.9-4" />
+              <path d="M12 12.05v7.85" />
+            </svg>
+            Box
           </button>
           <button class="side-nav-button side-nav-muted" type="button">
-            <span aria-hidden="true">⚙</span> Settings
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9.65 4.2 10.4 2.8h3.2l.75 1.4 1.65.68 1.55-.46 2.25 2.25-.46 1.55.68 1.65 1.4.75v3.2l-1.4.75-.68 1.65.46 1.55-2.25 2.25-1.55-.46-1.65.68-.75 1.4h-3.2l-.75-1.4-1.65-.68-1.55.46-2.25-2.25.46-1.55-.68-1.65-1.4-.75v-3.2l1.4-.75.68-1.65-.46-1.55 2.25-2.25 1.55.46 1.65-.68Z" />
+              <circle cx="12" cy="12" r="3.2" />
+            </svg>
+            Settings
           </button>
         </nav>
 
@@ -37,13 +51,16 @@
       <div class="main-column">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Watch</p>
             <h1>Watch</h1>
             <p class="page-subtitle">Discover movies that stay with you, always.</p>
           </div>
           <div class="top-actions">
             <label class="search-box">
               <span>検索</span>
+              <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="10.7" cy="10.7" r="6.2" />
+                <path d="m15.25 15.25 4.25 4.25" />
+              </svg>
               <input id="searchInput" type="search" placeholder="Search movies..." />
             </label>
             <button class="primary-button list-add-button" id="openFormButton" type="button"><span aria-hidden="true">＋</span> Add Movie</button>

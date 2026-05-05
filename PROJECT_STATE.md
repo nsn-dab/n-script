@@ -26,7 +26,7 @@ Macでは `Movie Shelf.app` または `Movie Shelf.command` からも起動で�
 - 取得できる場合は作品サムネイルと概要も映画カードに表示
 - 検索、並び替え
 - 映画カードは一覧性重視の短縮表示。カード内には監督、キャスト、ジャンル、作品ページリンクを出さず、クリック後の詳細モーダルで全登録情報、編集、削除を扱う
-- ロゴは `nreel-logo-full.svg` をPCビュー、`nreel-icon.svg` をSPビューとPWAアイコンに使う
+- ロゴは `nreel-logo-full.png` をPCビュー、`nreel-icon.png` をSPビュー、favicon、PWAアイコンに使う
 - ブックマークレットから作品ページを追加
 - JSONバックアップの書き出し、読み込み
 - 15ビート逆箱の保存

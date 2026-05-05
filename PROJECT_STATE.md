@@ -29,7 +29,7 @@ Macでは `Movie Shelf.app` または `Movie Shelf.command` からも起動で�
 - ロゴは `nreel-logo-full.png` をPCビュー、`nreel-icon.png` をSPビュー、favicon、PWAアイコンに使う
 - ブックマークレットから作品ページを追加
 - JSONバックアップの書き出し、読み込み
-- 15ビート逆箱の保存
+- 15ビート逆箱の保存、編集、削除
 - PWA用manifestとservice worker
 
 ## データ保存
@@ -77,7 +77,6 @@ node server.js
 
 ## 次に改善しやすい箇所
 
-- 逆箱の編集機能
 - 逆箱の検索・絞り込み
 - バックアップ読み込み時の確認ダイアログ
 - クラウド同期

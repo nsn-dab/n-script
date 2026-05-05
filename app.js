@@ -36,6 +36,7 @@ const sampleMovies = [
 let movies = loadMovies();
 let reverseBeats = loadReverseBeats();
 let editingId = null;
+let editingReverseBeatId = null;
 let selectedReferenceFileName = "";
 let pendingConfirmAction = null;
 let detailMovieId = null;
@@ -77,8 +78,10 @@ const fetchTitleInfoButton = document.querySelector("#fetchTitleInfoButton");
 const reverseList = document.querySelector("#reverseList");
 const reverseCount = document.querySelector("#reverseCount");
 const reverseTemplate = document.querySelector("#reverseBeatTemplate");
+const reverseForm = document.querySelector("#reverseForm");
 const referenceFileNameDisplay = document.querySelector("#referenceFileName");
 const saveReverseBeatButton = document.querySelector("#saveReverseBeatButton");
+const cancelReverseEditButton = document.querySelector("#cancelReverseEditButton");
 const tabButtons = document.querySelectorAll(".tab-button[data-tab]");
 const tabPanels = document.querySelectorAll(".tab-panel");
 
@@ -93,6 +96,14 @@ const inputs = {
   posterUrl: document.querySelector("#posterUrlInput"),
   description: document.querySelector("#descriptionInput"),
   note: document.querySelector("#noteInput"),
+};
+
+const reverseInputs = {
+  referenceUrl: document.querySelector("#referenceUrlInput"),
+  referenceFile: document.querySelector("#referenceFileInput"),
+  title: document.querySelector("#reverseTitleInput"),
+  beats: document.querySelector("#reverseBeatsInput"),
+  note: document.querySelector("#reverseNoteInput"),
 };
 
 form.addEventListener("submit", (event) => {
@@ -127,6 +138,7 @@ sortSelect.addEventListener("change", render);
 fetchInfoButton.addEventListener("click", fetchMovieInfo);
 fetchTitleInfoButton.addEventListener("click", fetchMovieInfoByTitle);
 saveReverseBeatButton.addEventListener("click", saveReverseBeat);
+cancelReverseEditButton.addEventListener("click", stopEditingReverseBeat);
 document.querySelector("#referenceFileInput").addEventListener("change", handleReferenceFileChange);
 tabButtons.forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
 
@@ -168,10 +180,23 @@ function loadReverseBeats() {
   if (!saved) return [];
   try {
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeReverseBeat) : [];
   } catch {
     return [];
   }
+}
+
+function normalizeReverseBeat(item) {
+  return {
+    id: item.id || crypto.randomUUID(),
+    referenceUrl: item.referenceUrl || "",
+    referenceFileName: item.referenceFileName || "",
+    title: item.title || "無題",
+    beats: item.beats || "",
+    note: item.note || "",
+    createdAt: item.createdAt || Date.now(),
+    updatedAt: item.updatedAt || "",
+  };
 }
 
 function saveReverseBeats() {
@@ -475,17 +500,52 @@ function handleReferenceFileChange(event) {
 }
 
 function saveReverseBeat() {
-  const url = document.querySelector("#referenceUrlInput").value.trim();
-  const title = document.querySelector("#reverseTitleInput").value.trim();
-  const beats = document.querySelector("#reverseBeatsInput").value.trim();
-  const note = document.querySelector("#reverseNoteInput").value.trim();
+  const url = reverseInputs.referenceUrl.value.trim();
+  const title = reverseInputs.title.value.trim();
+  const beats = reverseInputs.beats.value.trim();
+  const note = reverseInputs.note.value.trim();
   if (!title || !beats || (!url && !selectedReferenceFileName)) {
     alert("対象映画タイトル、参照URLまたはファイル、15ビートの逆箱を入力してください。");
     return;
   }
-  reverseBeats.unshift({ id: crypto.randomUUID(), referenceUrl: url, referenceFileName: selectedReferenceFileName, title, beats, note, createdAt: Date.now() });
+
+  const payload = { referenceUrl: url, referenceFileName: selectedReferenceFileName, title, beats, note };
+  if (editingReverseBeatId) {
+    reverseBeats = reverseBeats.map((item) => (item.id === editingReverseBeatId ? { ...item, ...payload, updatedAt: Date.now() } : item));
+    saveReverseBeats();
+    stopEditingReverseBeat();
+    return;
+  }
+
+  reverseBeats.unshift({ id: crypto.randomUUID(), ...payload, createdAt: Date.now(), updatedAt: "" });
   saveReverseBeats();
-  document.querySelector("#reverseForm").reset();
+  resetReverseForm();
+}
+
+function startEditingReverseBeat(id) {
+  const item = reverseBeats.find((entry) => entry.id === id);
+  if (!item) return;
+  editingReverseBeatId = id;
+  reverseInputs.referenceUrl.value = item.referenceUrl || "";
+  reverseInputs.title.value = item.title || "";
+  reverseInputs.beats.value = item.beats || "";
+  reverseInputs.note.value = item.note || "";
+  selectedReferenceFileName = item.referenceFileName || "";
+  referenceFileNameDisplay.textContent = selectedReferenceFileName;
+  saveReverseBeatButton.textContent = "更新する";
+  cancelReverseEditButton.classList.remove("hidden");
+  reverseInputs.title.focus();
+}
+
+function stopEditingReverseBeat() {
+  editingReverseBeatId = null;
+  resetReverseForm();
+  saveReverseBeatButton.textContent = "保存する";
+  cancelReverseEditButton.classList.add("hidden");
+}
+
+function resetReverseForm() {
+  reverseForm.reset();
   selectedReferenceFileName = "";
   referenceFileNameDisplay.textContent = "";
 }
@@ -500,8 +560,10 @@ function renderReverseBeats() {
     card.querySelector(".beat-meta").textContent = item.referenceFileName || item.referenceUrl || "参照なし";
     card.querySelector(".reverse-beats").textContent = item.beats;
     card.querySelector(".reverse-note").textContent = item.note || "メモなし";
+    card.querySelector(".edit-button").addEventListener("click", () => startEditingReverseBeat(item.id));
     card.querySelector(".delete-button").addEventListener("click", () => {
       reverseBeats = reverseBeats.filter((entry) => entry.id !== item.id);
+      if (editingReverseBeatId === item.id) stopEditingReverseBeat();
       saveReverseBeats();
     });
     reverseList.append(card);

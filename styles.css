@@ -519,6 +519,7 @@ h2 { margin-bottom: 0; font-size: 1.16rem; }
 }
 .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .reverse-form { display: grid; gap: 18px; }
+.reverse-form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .url-input-row, .fetchable-input-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 12px; align-items: center; }
 .fetch-button { width: 100%; }
 .file-picker { position: relative; }

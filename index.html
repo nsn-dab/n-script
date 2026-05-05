@@ -43,14 +43,6 @@
             <p class="page-subtitle" id="pageSubtitle">心がときめく映画を一緒に見つけよう。</p>
           </div>
           <div class="top-actions">
-            <label class="search-box">
-              <span>検索</span>
-              <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="10.7" cy="10.7" r="6.2" />
-                <path d="m15.25 15.25 4.25 4.25" />
-              </svg>
-              <input id="searchInput" type="search" placeholder="Search movies..." />
-            </label>
             <button class="primary-button list-add-button" id="openFormButton" type="button"><span aria-hidden="true">＋</span> Add Movie</button>
           </div>
         </header>
@@ -195,13 +187,23 @@
                 <button class="filter-pill" type="button" data-status-filter="unwatched">未視聴 <span id="unwatchedMovieCount">0</span></button>
                 <button class="filter-pill" type="button" data-status-filter="watched">視聴済み <span id="watchedMovieCount">0</span></button>
               </div>
-              <label>
-                <span>並び順</span>
-                <select id="sortSelect">
-                  <option value="createdDesc">追加順</option>
-                  <option value="titleAsc">タイトル順</option>
-                </select>
-              </label>
+              <div class="filter-tools">
+                <label class="search-box">
+                  <span>検索</span>
+                  <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="10.7" cy="10.7" r="6.2" />
+                    <path d="m15.25 15.25 4.25 4.25" />
+                  </svg>
+                  <input id="searchInput" type="search" />
+                </label>
+                <label>
+                  <span>並び順</span>
+                  <select id="sortSelect">
+                    <option value="createdDesc">追加順</option>
+                    <option value="titleAsc">タイトル順</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="movie-list" id="movieList" aria-live="polite"></div>

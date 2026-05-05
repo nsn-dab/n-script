@@ -395,8 +395,7 @@ h3 {
   align-items: center;
   gap: 8px;
 }
-.status-button,
-.movie-menu-button {
+.status-button {
   display: grid;
   width: 36px;
   height: 36px;
@@ -407,6 +406,7 @@ h3 {
   background: rgba(8,8,10,.58);
   box-shadow: 0 12px 26px rgba(0,0,0,.28);
   backdrop-filter: blur(10px);
+  transition: border-color .15s ease, background .15s ease, color .15s ease, opacity .15s ease;
 }
 .status-button svg {
   width: 19px;
@@ -417,55 +417,21 @@ h3 {
   stroke-linejoin: round;
   stroke-width: 2;
 }
-.status-want { color: #fff; background: rgba(224,0,18,.48); border-color: rgba(255,71,87,.34); }
-.status-watched { color: #f3f4f6; }
-.status-interested { color: #fbbf24; }
-.status-interested svg { fill: currentColor; stroke-width: 1.6; }
-.movie-menu-button {
-  opacity: 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-  line-height: 1;
-  transform: translateY(-2px);
-  transition: opacity .15s ease, transform .15s ease, border-color .15s ease, background .15s ease;
+.status-unwatched {
+  color: rgba(255,255,255,.45);
+  opacity: .74;
 }
-.movie-item:hover .movie-menu-button,
-.movie-item:focus-within .movie-menu-button {
-  opacity: 1;
-  transform: translateY(0);
+.status-watched {
+  color: #fff;
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.24);
 }
-.status-button:hover,
-.movie-menu-button:hover {
+.status-button:hover {
   border-color: rgba(255,255,255,.28);
   background: rgba(255,255,255,.11);
+  color: #fff;
+  opacity: 1;
 }
-.movie-status-menu {
-  position: absolute;
-  top: 44px;
-  right: 0;
-  display: grid;
-  width: 172px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 10px;
-  background: rgba(10,10,12,.94);
-  box-shadow: 0 24px 54px rgba(0,0,0,.46);
-  backdrop-filter: blur(16px);
-}
-.movie-status-menu button {
-  min-height: 38px;
-  border: 0;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  padding: 0 13px;
-  color: rgba(255,255,255,.84);
-  background: transparent;
-  font-size: .82rem;
-  font-weight: 650;
-  text-align: left;
-}
-.movie-status-menu button:last-child { border-bottom: 0; }
-.movie-status-menu button:hover { color: #fff; background: rgba(255,255,255,.08); }
-.movie-status-menu .status-menu-danger { color: #fb7185; }
 
 .description-line, .note-line { margin-bottom: 0; overflow-wrap: anywhere; }
 .description-line {
@@ -673,10 +639,6 @@ h3 {
     transition: none;
     transform: none;
   }
-}
-
-@media (hover: none) {
-  .movie-menu-button { opacity: 1; transform: none; }
 }
 
 .movie-form {

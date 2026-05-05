@@ -15,7 +15,7 @@ const sampleMovies = [
     posterUrl: "",
     description: "東京・渋谷の公共トイレ清掃員の日々を描く、静かな余韻のあるドラマ。",
     note: "静かな日にゆっくり見たい。",
-    status: "want",
+    status: "",
     createdAt: Date.now() - 3000,
   },
   {
@@ -30,7 +30,7 @@ const sampleMovies = [
     posterUrl: "",
     description: "砂の惑星アラキスを舞台に、運命と復讐が交差する壮大なSF続編。",
     note: "大きいスクリーン向き。",
-    status: "want",
+    status: "",
     createdAt: Date.now() - 2000,
   },
 ];
@@ -43,7 +43,6 @@ let selectedReferenceFileName = "";
 let pendingConfirmAction = null;
 let detailMovieId = null;
 let currentStatusFilter = "all";
-let openStatusMenu = null;
 
 const form = document.querySelector("#movieForm");
 const openFormButton = document.querySelector("#openFormButton");
@@ -104,21 +103,6 @@ const tabCopy = {
   },
 };
 
-const movieStatuses = {
-  want: {
-    label: "観たい",
-    icon: "bookmark",
-  },
-  watched: {
-    label: "観た",
-    icon: "check",
-  },
-  interested: {
-    label: "気になる",
-    icon: "star",
-  },
-};
-
 const inputs = {
   title: document.querySelector("#titleInput"),
   director: document.querySelector("#directorInput"),
@@ -176,7 +160,6 @@ saveReverseBeatButton.addEventListener("click", saveReverseBeat);
 cancelReverseEditButton.addEventListener("click", stopEditingReverseBeat);
 document.querySelector("#referenceFileInput").addEventListener("change", handleReferenceFileChange);
 tabButtons.forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
-document.addEventListener("click", closeOpenStatusMenu);
 
 function loadMovies() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -208,8 +191,7 @@ function normalizeMovie(movie) {
 }
 
 function normalizeMovieStatus(status) {
-  if (status === "") return "";
-  return Object.prototype.hasOwnProperty.call(movieStatuses, status) ? status : "want";
+  return status === "watched" ? "watched" : "";
 }
 
 function saveAndRender() {
@@ -261,7 +243,6 @@ function switchTab(tabName) {
 }
 
 function render() {
-  closeOpenStatusMenu();
   const visibleMovies = getVisibleMovies();
   movieList.innerHTML = "";
   emptyState.classList.toggle("hidden", visibleMovies.length > 0);
@@ -275,7 +256,6 @@ function render() {
     const posterFallback = poster.querySelector("span");
     const heading = item.querySelector("h3");
     const statusButton = item.querySelector(".status-button");
-    const menuButton = item.querySelector(".movie-menu-button");
 
     item.tabIndex = 0;
     item.setAttribute("role", "button");
@@ -283,8 +263,7 @@ function render() {
     setPoster(poster, posterImage, posterFallback, movie);
     renderSplitTitle(heading, movie.title, "movie-card-title");
     renderStatusButton(statusButton, movie);
-    statusButton.addEventListener("click", (event) => handleStatusButtonClick(event, movie));
-    menuButton.addEventListener("click", (event) => openMovieStatusMenu(event, movie));
+    statusButton.addEventListener("click", (event) => toggleWatchedStatus(event, movie));
     item.addEventListener("click", () => openMovieDetail(movie.id));
     item.addEventListener("keydown", (event) => {
       if (event.target !== item) return;
@@ -304,7 +283,7 @@ function getVisibleMovies() {
         .join(" ")
         .toLowerCase();
       const matchesQuery = !query || haystack.includes(query);
-      const matchesStatus = currentStatusFilter === "all" || movie.status === currentStatusFilter;
+      const matchesStatus = currentStatusFilter === "all" || (currentStatusFilter === "watched" ? movie.status === "watched" : movie.status !== "watched");
       return matchesQuery && matchesStatus;
     })
     .sort((a, b) => {
@@ -322,55 +301,16 @@ function setStatusFilter(filter) {
 }
 
 function renderStatusButton(button, movie) {
-  const status = movieStatuses[movie.status];
-  button.className = `status-button ${movie.status ? `status-${movie.status}` : "status-empty"}`;
-  button.title = status ? `${status.label}を変更` : "ステータスを設定";
+  const watched = movie.status === "watched";
+  button.className = `status-button ${watched ? "status-watched" : "status-unwatched"}`;
+  button.title = watched ? "未視聴に戻す" : "視聴済みにする";
   button.setAttribute("aria-label", button.title);
-  button.innerHTML = status ? getStatusIcon(status.icon) : "";
-  button.hidden = !status;
+  button.innerHTML = getCheckIcon();
 }
 
-function handleStatusButtonClick(event, movie) {
+function toggleWatchedStatus(event, movie) {
   event.stopPropagation();
-  if (movie.status === "watched" || movie.status === "interested") {
-    updateMovieStatus(movie.id, "");
-    return;
-  }
-  openMovieStatusMenu(event, movie);
-}
-
-function openMovieStatusMenu(event, movie) {
-  event.stopPropagation();
-  closeOpenStatusMenu();
-  const menu = document.createElement("div");
-  menu.className = "movie-status-menu";
-  menu.append(
-    createStatusMenuButton("観たいにする", () => updateMovieStatus(movie.id, "want")),
-    createStatusMenuButton("観たにする", () => updateMovieStatus(movie.id, "watched")),
-    createStatusMenuButton("気になるにする", () => updateMovieStatus(movie.id, "interested")),
-    createStatusMenuButton("ステータスを外す", () => updateMovieStatus(movie.id, "")),
-    createStatusMenuButton("削除", () => deleteMovie(movie.id), "danger")
-  );
-  event.currentTarget.closest(".movie-card-controls").append(menu);
-  openStatusMenu = menu;
-}
-
-function createStatusMenuButton(label, action, tone = "") {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = label;
-  button.className = tone ? `status-menu-${tone}` : "";
-  button.addEventListener("click", (event) => {
-    event.stopPropagation();
-    closeOpenStatusMenu();
-    action();
-  });
-  return button;
-}
-
-function closeOpenStatusMenu() {
-  openStatusMenu?.remove();
-  openStatusMenu = null;
+  updateMovieStatus(movie.id, movie.status === "watched" ? "" : "watched");
 }
 
 function updateMovieStatus(id, status) {
@@ -378,14 +318,8 @@ function updateMovieStatus(id, status) {
   saveAndRender();
 }
 
-function getStatusIcon(icon) {
-  if (icon === "check") {
-    return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7" /></svg>`;
-  }
-  if (icon === "star") {
-    return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.8 2.46 4.98 5.5.8-3.98 3.88.94 5.48L12 16.35 7.08 18.94l.94-5.48-3.98-3.88 5.5-.8L12 3.8Z" /></svg>`;
-  }
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.75h10a1.75 1.75 0 0 1 1.75 1.75v13.2l-6.75-3.9-6.75 3.9V6.5A1.75 1.75 0 0 1 7 4.75Z" /></svg>`;
+function getCheckIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7" /></svg>`;
 }
 
 function setPoster(container, image, fallback, movie) {

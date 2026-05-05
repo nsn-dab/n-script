@@ -1,31 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
-  <title id="title">NReel icon</title>
-  <desc id="desc">NReel icon mark using a white N and red film strip.</desc>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_レイヤー_2" data-name="レイヤー 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 210.5 198">
   <defs>
-    <linearGradient id="iconBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1a1a1d"/>
-      <stop offset="1" stop-color="#050506"/>
+    <style>
+      .cls-1 {
+        fill: #070707;
+      }
+
+      .cls-2 {
+        fill: #a8000e;
+      }
+
+      .cls-3 {
+        fill: url(#_名称未設定グラデーション_3);
+      }
+
+      .cls-4 {
+        fill: url(#_名称未設定グラデーション_2);
+      }
+
+      .cls-5 {
+        fill: #8f000c;
+      }
+
+      .cls-6 {
+        fill: url(#_名称未設定グラデーション_2-2);
+      }
+    </style>
+    <linearGradient id="_名称未設定グラデーション_2" data-name="名称未設定グラデーション 2" x1="-15.34" y1="156.02" x2="258.7" y2="-29.93" gradientTransform="translate(88 292) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".52" stop-color="#f1f1f1"/>
+      <stop offset="1" stop-color="#d8d8d8"/>
     </linearGradient>
-    <linearGradient id="whiteSheen" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.5" stop-color="#d8d8d8"/>
-      <stop offset="0.75" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#909090"/>
-    </linearGradient>
-    <linearGradient id="redFilm" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e00012"/>
-      <stop offset="1" stop-color="#a8000e"/>
+    <linearGradient id="_名称未設定グラデーション_2-2" data-name="名称未設定グラデーション 2" x1="-1.89" y1="204.04" x2="262.2" y2="24.84" xlink:href="#_名称未設定グラデーション_2"/>
+    <linearGradient id="_名称未設定グラデーション_3" data-name="名称未設定グラデーション 3" x1="-437.58" y1="641" x2="-436.63" y2="640.05" gradientTransform="translate(16627 23077) scale(38 -36)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
   </defs>
-
-  <rect x="8" y="8" width="144" height="144" rx="28" fill="url(#iconBg)" stroke="#333337" stroke-width="2"/>
-  <path d="M36 116V42h18l49 52V42h16v74h-18L52 64v52Z" fill="url(#whiteSheen)"/>
-  <path d="M95 42h22v74H95V42Z" fill="url(#redFilm)"/>
-  <g fill="#130f10">
-    <rect x="102" y="51" width="8" height="5"/>
-    <rect x="102" y="63" width="8" height="5"/>
-    <rect x="102" y="75" width="8" height="5"/>
-    <rect x="102" y="87" width="8" height="5"/>
-    <rect x="102" y="99" width="8" height="5"/>
+  <g id="_レイヤー_1-2" data-name="レイヤー 1">
+    <g id="mark">
+      <path class="cls-4" d="M1,0h34.33v198H1V0Z"/>
+      <path class="cls-6" d="M16.1,0h40.65l132.8,198h-41.56L16.1,0Z"/>
+      <path class="cls-5" d="M169.85,0h40.65v198h-40.65V0Z"/>
+      <rect class="cls-1" x="184.3" y="52" width="11.74" height="20" rx="1.5" ry="1.5"/>
+      <rect class="cls-1" x="184.3" y="86" width="11.74" height="20" rx="1.5" ry="1.5"/>
+      <rect class="cls-1" x="184.3" y="120" width="11.74" height="20" rx="1.5" ry="1.5"/>
+      <rect class="cls-1" x="184.3" y="154" width="11.74" height="20" rx="1.5" ry="1.5"/>
+      <path class="cls-2" d="M169.85,166l21.68,32h-21.68v-32Z"/>
+      <path class="cls-3" d="M0,0h34.33v36H0V0Z"/>
+    </g>
   </g>
 </svg>

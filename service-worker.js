@@ -1,12 +1,12 @@
-const CACHE_NAME = "nreel-v2";
+const CACHE_NAME = "nreel-v3";
 const APP_ASSETS = [
   "/",
   "/index.html",
   "/styles.css",
   "/app.js",
   "/manifest.webmanifest",
-  "/nreel-logo-full.png",
-  "/nreel-icon.png",
+  "/nreel-logo-full.svg",
+  "/nreel-icon.svg",
 ];
 
 self.addEventListener("install", (event) => {

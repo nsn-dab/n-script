@@ -9,15 +9,15 @@
   "theme_color": "#09090b",
   "icons": [
     {
-      "src": "nreel-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "nreel-icon.png",
+      "sizes": "81x71",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "nreel-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "nreel-icon.png",
+      "sizes": "81x71",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

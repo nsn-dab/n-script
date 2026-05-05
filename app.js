@@ -324,7 +324,7 @@ function renderStatusButton(button, movie) {
   button.className = `status-button ${watched ? "status-watched" : "status-unwatched"}`;
   button.title = watched ? "未視聴に戻す" : "視聴済みにする";
   button.setAttribute("aria-label", button.title);
-  button.innerHTML = getCheckIcon();
+  button.textContent = watched ? "視聴済み" : "未視聴";
 }
 
 function setFormStatus(status) {
@@ -356,10 +356,6 @@ function toggleWatchedStatus(event, movie) {
 function updateMovieStatus(id, status) {
   movies = movies.map((movie) => (movie.id === id ? { ...movie, status } : movie));
   saveAndRender();
-}
-
-function getCheckIcon() {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7" /></svg>`;
 }
 
 function setPoster(container, image, fallback, movie) {

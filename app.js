@@ -252,7 +252,7 @@ function render() {
     item.setAttribute("role", "button");
     item.setAttribute("aria-label", `${movie.title} の詳細を開く`);
     setPoster(poster, posterImage, posterFallback, movie);
-    heading.textContent = movie.title;
+    renderSplitTitle(heading, movie.title, "movie-card-title");
     description.textContent = movie.description || "概要なし";
     description.classList.toggle("muted-empty", !movie.description);
     note.textContent = movie.note ? `メモ: ${movie.note}` : "";
@@ -340,7 +340,7 @@ function openMovieDetail(id) {
   const movie = movies.find((item) => item.id === id);
   if (!movie) return;
   detailMovieId = id;
-  detailTitle.textContent = movie.title;
+  renderDetailTitle(movie.title);
   detailMeta.textContent = buildDetailMeta(movie);
   detailDescription.textContent = movie.description || "概要なし";
   detailDescription.classList.toggle("muted-empty", !movie.description);
@@ -348,10 +348,39 @@ function openMovieDetail(id) {
   detailNote.classList.toggle("muted-empty", !movie.note);
   renderDetailFields(movie);
   setPoster(detailPoster, detailPosterImage, detailPosterFallback, movie);
+  movieDetailDialog.classList.remove("detail-entering");
   movieDetailDialog.classList.remove("hidden");
   detailBackdrop.classList.remove("hidden");
   document.body.classList.add("dialog-open");
+  requestAnimationFrame(() => {
+    movieDetailDialog.classList.add("detail-entering");
+  });
   setTimeout(() => closeDetailButton.focus(), 0);
+}
+
+function renderDetailTitle(title) {
+  renderSplitTitle(detailTitle, title, "detail-title");
+}
+
+function renderSplitTitle(container, title, classPrefix) {
+  const parts = splitDisplayTitle(title);
+  container.innerHTML = "";
+  const main = document.createElement("span");
+  main.className = `${classPrefix}-main`;
+  main.textContent = parts.main;
+  container.append(main);
+  if (!parts.sub) return;
+  const sub = document.createElement("span");
+  sub.className = `${classPrefix}-sub`;
+  sub.textContent = parts.sub;
+  container.append(sub);
+}
+
+function splitDisplayTitle(title) {
+  const value = String(title || "無題").trim();
+  const match = value.match(/^([A-Za-z0-9][A-Za-z0-9\s:;'"!?.,&+\-–—/()]+?)\s+([\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}々ー・].*)$/u);
+  if (!match) return { main: value, sub: "" };
+  return { main: match[1].trim(), sub: match[2].trim() };
 }
 
 function buildDetailMeta(movie) {
@@ -394,6 +423,7 @@ function createDetailField(label, value) {
 
 function closeMovieDetail() {
   detailMovieId = null;
+  movieDetailDialog.classList.remove("detail-entering");
   movieDetailDialog.classList.add("hidden");
   detailBackdrop.classList.add("hidden");
   document.body.classList.remove("dialog-open");

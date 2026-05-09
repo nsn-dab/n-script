@@ -8,6 +8,8 @@ const PORT = Number(process.env.PORT) || 5173;
 const HOST = "0.0.0.0";
 const ROOT = __dirname;
 loadEnvFile(path.join(ROOT, ".env"));
+const BASIC_AUTH_USER = cleanText(process.env.BASIC_AUTH_USER || "");
+const BASIC_AUTH_PASS = cleanText(process.env.BASIC_AUTH_PASS || "");
 
 const MAX_HTML_BYTES = 2_000_000;
 const TMDB_API_KEY = process.env.TMDB_API_KEY || "319d2750f37dd5ce55ad5a38afff96ff";
@@ -83,6 +85,7 @@ function parseEnvValue(value) {
 }
 
 const server = http.createServer(async (request, response) => {
+  if (!authorizeRequest(request, response)) return;
   const requestUrl = new URL(request.url, `http://${request.headers.host}`);
   if (requestUrl.pathname === "/api/extract") return handleExtract(requestUrl, response);
   if (requestUrl.pathname === "/api/search") return handleSearch(requestUrl, response);
@@ -98,6 +101,43 @@ const server = http.createServer(async (request, response) => {
 server.listen(PORT, HOST, () => {
   console.log(`NReel is running at http://localhost:${PORT}/index.html`);
 });
+
+function authorizeRequest(request, response) {
+  if (!BASIC_AUTH_USER || !BASIC_AUTH_PASS) return true;
+  const authHeader = String(request.headers.authorization || "");
+  if (!authHeader.startsWith("Basic ")) {
+    sendUnauthorized(response);
+    return false;
+  }
+  const encoded = authHeader.slice("Basic ".length).trim();
+  let decoded = "";
+  try {
+    decoded = Buffer.from(encoded, "base64").toString("utf8");
+  } catch {
+    sendUnauthorized(response);
+    return false;
+  }
+  const separator = decoded.indexOf(":");
+  if (separator < 0) {
+    sendUnauthorized(response);
+    return false;
+  }
+  const username = decoded.slice(0, separator);
+  const password = decoded.slice(separator + 1);
+  if (username !== BASIC_AUTH_USER || password !== BASIC_AUTH_PASS) {
+    sendUnauthorized(response);
+    return false;
+  }
+  return true;
+}
+
+function sendUnauthorized(response) {
+  response.writeHead(401, {
+    "WWW-Authenticate": 'Basic realm="N Script Private", charset="UTF-8"',
+    "content-type": "text/plain; charset=utf-8",
+  });
+  response.end("Authentication required.");
+}
 
 async function handleExtract(requestUrl, response) {
   const sourceUrl = requestUrl.searchParams.get("url");

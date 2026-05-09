@@ -99,7 +99,7 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`NReel is running at http://localhost:${PORT}/index.html`);
+  console.log(`N Script is running at http://localhost:${PORT}/index.html`);
 });
 
 function authorizeRequest(request, response) {

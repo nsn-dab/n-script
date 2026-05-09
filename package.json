@@ -2,7 +2,7 @@
   "name": "movietool",
   "private": true,
   "version": "0.0.0",
-  "description": "Movie Shelf / NReel local web app",
+  "description": "N Script local web app",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js"

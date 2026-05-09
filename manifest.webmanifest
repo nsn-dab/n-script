@@ -1,6 +1,6 @@
 {
-  "name": "NReel",
-  "short_name": "NReel",
+  "name": "N Script",
+  "short_name": "N Script",
   "description": "見たい映画をまとめて管理するウォッチリスト",
   "start_url": "/index.html",
   "scope": "/",

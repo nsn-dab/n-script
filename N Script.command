@@ -9,6 +9,6 @@ if curl -fsS --max-time 1 "$URL" >/dev/null 2>&1; then
   exit 0
 fi
 
-echo "Movie Shelfを起動しています..."
+echo "N Scriptを起動しています..."
 (sleep 1; open "$URL") &
 node server.js

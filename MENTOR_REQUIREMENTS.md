@@ -2,7 +2,7 @@
 
 ## 1. Goal
 
-`Mentor` is the critique and pitch-simulation workspace in NReel.  
+`Mentor` is the critique and pitch-simulation workspace in N Script.  
 It evaluates screenplay/proposal quality with strict producer-level logic, then runs interactive rehearsal to improve market readiness.
 
 This document defines requirements with a **public web app release** as the target.

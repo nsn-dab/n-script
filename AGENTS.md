@@ -14,7 +14,7 @@
 
 ## Current App
 
-既存ファイルを見る限り、Movie Shelfという映画管理ツール。
+既存ファイルを見る限り、N Scriptという映画管理ツール。
 
 主なファイル:
 
@@ -26,8 +26,8 @@
 - `PROJECT_STATE.md`
 - `manifest.webmanifest`
 - `service-worker.js`
-- `Movie Shelf.command`
-- `Movie Shelf.app`
+- `N Script.command`
+- `N Script.app`
 
 ## Work Style
 

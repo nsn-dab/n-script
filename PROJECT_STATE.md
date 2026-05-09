@@ -2,7 +2,7 @@
 
 ## ツール名称
 
-- 現在のプロダクト名称は `N Script`（旧: `N Reel`）
+- 現在のプロダクト名称は `N Script`
 
 ## 現在の目的
 
@@ -46,7 +46,7 @@ URL:
 http://localhost:5173/index.html
 ```
 
-Macでは `Movie Shelf.app` または `Movie Shelf.command` からも起動できる。
+Macでは `N Script.app` または `N Script.command` からも起動できる。
 
 ## 現在の主な機能
 
@@ -97,11 +97,11 @@ Macでは `Movie Shelf.app` または `Movie Shelf.command` からも起動で�
 
 ブラウザの `localStorage` に保存する。
 
-- 映画リスト: `movie-shelf-items`
+- 映画リスト: `movie-shelf-items`（互換維持のため旧キー名を利用）
 - 15ビート逆箱: `reverse-beats`
 - 最後に開いていたタブ: `current-tab`
 
-書き出しファイルは `movie-shelf-backup-YYYYMMDD.json`。
+書き出しファイルは `movie-shelf-backup-YYYYMMDD.json`（互換維持のため旧接頭辞）。
 現在は映画リストと15ビート逆箱の両方を含む。
 
 ## 注意点
@@ -126,7 +126,7 @@ Macでは `Movie Shelf.app` または `Movie Shelf.command` からも起動で�
 - 左ナビはDiscoverとAnalyzeのみ。Settingsと左下ユーザー表示は通常UIから削除済み
 - Discover上部の映画検索と追加ボタンはAnalyze画面では表示しない
 - 削除確認はブラウザ標準confirmではなく、アプリ内モーダルで表示する
-- service workerのキャッシュ名は `nreel-v4`。ロゴ変更など静的資産更新時はキャッシュ名も更新する
+- service workerのキャッシュ名は `n-script-v5`。ロゴ変更など静的資産更新時はキャッシュ名も更新する
 
 ## 検証
 

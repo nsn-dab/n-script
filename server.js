@@ -20,7 +20,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const geminiClients = initializeGeminiClients({
   apiKey: GEMINI_API_KEY,
-  defaultModel: process.env.GEMINI_MODEL || "gemini-2.5-flash-exp",
+  defaultModel: process.env.GEMINI_MODEL || "gemini-2.5-flash",
   models: {
     analyze: process.env.GEMINI_ANALYZE_MODEL,
     mentor: process.env.GEMINI_MENTOR_MODEL,
@@ -116,6 +116,7 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`N Script is running at http://localhost:${PORT}/index.html`);
+  console.log(`Using Gemini model: ${process.env.GEMINI_MODEL || "gemini-2.5-flash"} (analyze: ${process.env.GEMINI_ANALYZE_MODEL || "gemini-2.5-flash"}, mentor: ${process.env.GEMINI_MENTOR_MODEL || "gemini-2.5-flash"})`);
 });
 
 function authorizeRequest(request, response) {

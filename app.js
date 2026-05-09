@@ -172,6 +172,9 @@ const analyzeDialogBusyElapsed = document.querySelector("#analyzeDialogBusyElaps
 const analyzeElapsedSeconds = document.querySelector("#analyzeElapsedSeconds");
 const analyzeCompletePanel = document.querySelector("#analyzeCompletePanel");
 const analyzeCompleteOkButton = document.querySelector("#analyzeCompleteOkButton");
+const geminiUsageBar = document.querySelector("#geminiUsageBar");
+const geminiUsageText = document.querySelector("#geminiUsageText");
+const geminiUsageReset = document.querySelector("#geminiUsageReset");
 const analyzeScriptDbActions = document.querySelector("#analyzeScriptDbActions");
 const analyzeScriptDbSearchButton = document.querySelector("#analyzeScriptDbSearchButton");
 const scriptDbConfirmPanel = document.querySelector("#scriptDbConfirmPanel");
@@ -1156,6 +1159,32 @@ function openAnalyzeSetup(sourceType) {
   analyzeDialog.classList.remove("hidden");
   hideScriptDbConfirmPanel();
   reverseInputs.title.focus();
+  refreshGeminiUsage();
+}
+
+async function refreshGeminiUsage() {
+  if (!geminiUsageBar) return;
+  try {
+    const res = await fetch("/api/gemini-usage");
+    if (!res.ok) return;
+    const data = await res.json();
+    const count = Number(data.count) || 0;
+    const limit = Number(data.limit) || 20;
+    if (geminiUsageText) geminiUsageText.textContent = `Gemini ${count} / ${limit} today`;
+    if (geminiUsageReset) geminiUsageReset.textContent = resetLabel();
+    geminiUsageBar.classList.remove("hidden");
+  } catch { /* ignore */ }
+}
+
+function resetLabel() {
+  const now = new Date();
+  const jstOffset = 9 * 60;
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const jstMinutes = (utcMinutes + jstOffset) % (24 * 60);
+  const remaining = (24 * 60 - jstMinutes);
+  const h = Math.floor(remaining / 60);
+  const m = remaining % 60;
+  return `Reset in ${h}h ${m}m`;
 }
 
 function updateAnalyzeFormMode() {
@@ -1529,6 +1558,7 @@ async function extractAnalyzeBeats(options = {}) {
     saveReverseBeats();
     renderAnalyzeBeats();
     analyzeCompletePanel?.classList.remove("hidden");
+    refreshGeminiUsage();
   } catch (error) {
     setAnalyzeStatus(error.message || "保存に失敗しました。", true);
   } finally {

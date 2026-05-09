@@ -111,6 +111,7 @@ const server = http.createServer(async (request, response) => {
   if (requestUrl.pathname === "/api/analyze/logline") return handleAnalyzeLogline(request, response);
   if (requestUrl.pathname === "/api/gemini/analyze") return handleGeminiAnalyze(request, response);
   if (requestUrl.pathname === "/api/gemini/mentor") return handleGeminiMentor(request, response);
+  if (requestUrl.pathname === "/api/gemini-usage") return handleGeminiUsage(request, response);
   serveStatic(requestUrl, response);
 });
 
@@ -763,6 +764,51 @@ function normalizeInput(value) {
   return tmdbId ? { type: "tmdb_id", value: tmdbId } : { type: "query", value: raw };
 }
 
+// ── Gemini usage tracking ──────────────────────────────────────────────────
+const USAGE_FILE = path.join(ROOT, ".gemini-usage.json");
+const GEMINI_DAILY_LIMIT = Number(process.env.GEMINI_DAILY_LIMIT) || 20;
+
+function todayJst() {
+  return new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+}
+
+function loadGeminiUsage() {
+  try {
+    const raw = fs.readFileSync(USAGE_FILE, "utf8");
+    const data = JSON.parse(raw);
+    if (data.date === todayJst()) return data;
+  } catch { /* file missing or parse error */ }
+  return { date: todayJst(), model: "", count: 0 };
+}
+
+function saveGeminiUsage(usage) {
+  try { fs.writeFileSync(USAGE_FILE, JSON.stringify(usage, null, 2), "utf8"); } catch { /* ignore */ }
+}
+
+let geminiUsage = loadGeminiUsage();
+
+function incrementGeminiUsage(model) {
+  const today = todayJst();
+  if (geminiUsage.date !== today) {
+    geminiUsage = { date: today, model, count: 0 };
+  }
+  geminiUsage.model = model;
+  geminiUsage.count += 1;
+  saveGeminiUsage(geminiUsage);
+}
+
+function handleGeminiUsage(_request, response) {
+  const today = todayJst();
+  if (geminiUsage.date !== today) geminiUsage = { date: today, model: geminiUsage.model, count: 0 };
+  sendJson(response, 200, {
+    date: geminiUsage.date,
+    model: geminiUsage.model,
+    count: geminiUsage.count,
+    limit: GEMINI_DAILY_LIMIT,
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function initializeGeminiClients({ apiKey, defaultModel, models = {} }) {
   return {
     analyze: createGeminiClient({ apiKey, model: models.analyze || defaultModel, purpose: "analyze" }),
@@ -821,6 +867,7 @@ async function callGemini({ apiKey, model, systemInstruction, prompt, temperatur
     throw new Error(payload.error?.message || `Gemini APIの取得に失敗しました。HTTP ${response.status}`);
   }
   const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim() || "";
+  incrementGeminiUsage(model);
   return {
     model,
     text,

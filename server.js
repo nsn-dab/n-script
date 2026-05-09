@@ -618,7 +618,7 @@ function buildManualAnalyzeResponse({ title, runtimeMinutes, theoryBeats, source
   };
 }
 
-function buildAnalyzeExtractionResponse({ title, runtimeMinutes, sourceType, theoryBeats, result }) {
+function buildAnalyzeExtractionResponse({ title, runtimeMinutes, sourceType, theoryBeats, result, sourceMeta }) {
   const extractedBeats = Array.isArray(result.json?.beats) ? result.json.beats : [];
   const beats = theoryBeats.map((theoryBeat, index) => {
     const extracted = findExtractedBeat(extractedBeats, theoryBeat, index);
@@ -634,6 +634,7 @@ function buildAnalyzeExtractionResponse({ title, runtimeMinutes, sourceType, the
     title: cleanText(result.json?.title || title) || null,
     runtimeMinutes: runtimeMinutes || null,
     sourceType,
+    sourceMeta: buildAnalyzeSourceMeta(sourceType, sourceMeta),
     beats,
     rawExtraction: result.json || null,
     model: result.model,
@@ -679,6 +680,17 @@ function calculateBeatTheory(runtimeMinutes) {
 
 function normalizeAnalyzeSourceType(value) {
   return ["manual", "script", "video"].includes(value) ? value : "manual";
+}
+
+function buildAnalyzeSourceMeta(sourceType, overrides = {}) {
+  const normalizedType = normalizeAnalyzeSourceType(sourceType);
+  const defaultMethod = normalizedType === "script" ? "script_db" : normalizedType;
+  return {
+    sourceType: normalizedType,
+    method: cleanText(overrides.method || "") || defaultMethod,
+    sourceUrl: cleanText(overrides.sourceUrl || "") || "",
+    fileName: cleanText(overrides.fileName || "") || "",
+  };
 }
 
 function normalizeBeatRatio(value) {

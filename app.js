@@ -460,6 +460,7 @@ function switchTab(tabName) {
   tabPanels.forEach((panel) => toggleAnimatedPanel(panel, panel.dataset.tab === nextTab));
   localStorage.setItem(STORAGE_TAB_KEY, nextTab);
   if (nextTab === "reverse") renderReverseBeats();
+  if (nextTab === "mentor") renderMentorHistory();
 }
 
 function toggleAnimatedPanel(panel, shouldShow) {
@@ -1905,7 +1906,350 @@ function normalizeDateInput(value) {
   return "";
 }
 
+// ── Mentor ────────────────────────────────────────────────────────────────
+// DOM変数をswitchTab(savedTab)より前に宣言する。
+// switchTab("mentor")がrenderMentorHistory()を呼ぶため、
+// ここより後に宣言するとTDZ(Temporal Dead Zone)エラーになる。
+
+const MENTOR_STORAGE_KEY = "mentor-history";
+
+const mentorInputSection = document.querySelector("#mentorInputSection");
+const mentorTextArea = document.querySelector("#mentorTextArea");
+const mentorFileArea = document.querySelector("#mentorFileArea");
+const mentorTextInput = document.querySelector("#mentorTextInput");
+const mentorTitleInput = document.querySelector("#mentorTitleInput");
+const mentorFileTitleInput = document.querySelector("#mentorFileTitleInput");
+const mentorFileInput = document.querySelector("#mentorFileInput");
+const mentorDropZone = document.querySelector("#mentorDropZone");
+const mentorDropLabel = document.querySelector("#mentorDropLabel");
+const mentorAnalyzeButton = document.querySelector("#mentorAnalyzeButton");
+const mentorStatus = document.querySelector("#mentorStatus");
+const mentorBusy = document.querySelector("#mentorBusy");
+const mentorResults = document.querySelector("#mentorResults");
+const mentorResultsTitle = document.querySelector("#mentorResultsTitle");
+const mentorResetButton = document.querySelector("#mentorResetButton");
+const mentorRadarSvg = document.querySelector("#mentorRadarSvg");
+const mentorScores = document.querySelector("#mentorScores");
+const mentorHighConcept = document.querySelector("#mentorHighConcept");
+const mentorAnalyses = document.querySelector("#mentorAnalyses");
+const mentorBoxOffice = document.querySelector("#mentorBoxOffice");
+const mentorVerdictBlock = document.querySelector("#mentorVerdictBlock");
+const mentorPriorities = document.querySelector("#mentorPriorities");
+const mentorHistory = document.querySelector("#mentorHistory");
+const mentorHistoryList = document.querySelector("#mentorHistoryList");
+
+let mentorMode = "text";
+let mentorSelectedFile = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const savedTab = localStorage.getItem(STORAGE_TAB_KEY) || "movies";
 switchTab(savedTab);
 saveAndRender();
 renderReverseBeats();
+
+// ── Mentor (続き) ─────────────────────────────────────────────────────────
+
+function loadMentorHistory() {
+  try { return JSON.parse(localStorage.getItem(MENTOR_STORAGE_KEY) || "[]"); } catch { return []; }
+}
+function saveMentorHistory(list) {
+  localStorage.setItem(MENTOR_STORAGE_KEY, JSON.stringify(list));
+}
+function addMentorHistoryItem(title, data) {
+  const list = loadMentorHistory();
+  const item = { id: Date.now().toString(36), title: title || "無題", date: new Date().toISOString(), data };
+  list.unshift(item);
+  saveMentorHistory(list.slice(0, 30));
+  return item;
+}
+
+// Mode toggle
+document.querySelectorAll("[data-mentor-mode]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    mentorMode = btn.dataset.mentorMode;
+    document.querySelectorAll("[data-mentor-mode]").forEach((b) =>
+      b.classList.toggle("filter-pill-active", b === btn),
+    );
+    mentorTextArea?.classList.toggle("hidden", mentorMode !== "text");
+    mentorFileArea?.classList.toggle("hidden", mentorMode !== "file");
+    setMentorStatus("", false);
+  });
+});
+
+// File drop zone
+mentorDropZone?.addEventListener("click", () => mentorFileInput?.click());
+mentorDropZone?.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") mentorFileInput?.click(); });
+mentorDropZone?.addEventListener("dragover", (e) => { e.preventDefault(); mentorDropZone.classList.add("drag-over"); });
+mentorDropZone?.addEventListener("dragleave", () => mentorDropZone.classList.remove("drag-over"));
+mentorDropZone?.addEventListener("drop", (e) => {
+  e.preventDefault();
+  mentorDropZone.classList.remove("drag-over");
+  const file = e.dataTransfer?.files?.[0];
+  if (file) setMentorFile(file);
+});
+mentorFileInput?.addEventListener("change", () => {
+  const file = mentorFileInput.files?.[0];
+  if (file) setMentorFile(file);
+});
+
+function setMentorFile(file) {
+  mentorSelectedFile = file;
+  if (mentorDropLabel) {
+    mentorDropLabel.innerHTML = `<strong>${file.name}</strong><br><span>${(file.size / 1024).toFixed(0)} KB</span>`;
+  }
+  setMentorStatus("", false);
+}
+
+function setMentorStatus(msg, isError = false) {
+  if (!mentorStatus) return;
+  mentorStatus.textContent = msg;
+  mentorStatus.classList.toggle("hidden", !msg);
+  mentorStatus.style.color = isError ? "var(--error-color, #e50914)" : "var(--text-muted, #888)";
+}
+
+// Submit
+mentorAnalyzeButton?.addEventListener("click", runMentorAnalyze);
+
+async function runMentorAnalyze() {
+  setMentorStatus("", false);
+  let title = "";
+  let bodyOrFormData;
+  let isMultipart = false;
+
+  if (mentorMode === "text") {
+    const text = mentorTextInput?.value?.trim();
+    title = mentorTitleInput?.value?.trim() || "";
+    if (!text) { setMentorStatus("企画テキストを入力してください。", true); return; }
+    bodyOrFormData = JSON.stringify({ title, text });
+  } else {
+    if (!mentorSelectedFile) { setMentorStatus("ファイルを選択してください。", true); return; }
+    title = mentorFileTitleInput?.value?.trim() || mentorSelectedFile.name.replace(/\.[^.]+$/, "");
+    const fd = new FormData();
+    fd.append("file", mentorSelectedFile);
+    fd.append("title", title);
+    bodyOrFormData = fd;
+    isMultipart = true;
+  }
+
+  // Show busy
+  mentorInputSection?.classList.add("hidden");
+  mentorBusy?.classList.remove("hidden");
+
+  try {
+    const res = await fetch("/api/mentor/analyze", {
+      method: "POST",
+      ...(isMultipart ? {} : { headers: { "content-type": "application/json" } }),
+      body: bodyOrFormData,
+    });
+    const data = await readResponseJson(res);
+    if (!res.ok) throw new Error(data.error || "Mentor解析に失敗しました。");
+    renderMentorResults(data, title);
+  } catch (err) {
+    mentorInputSection?.classList.remove("hidden");
+    setMentorStatus(err.message || "解析に失敗しました。", true);
+  } finally {
+    mentorBusy?.classList.add("hidden");
+  }
+}
+
+// Reset
+mentorResetButton?.addEventListener("click", () => {
+  mentorResults?.classList.add("hidden");
+  mentorInputSection?.classList.remove("hidden");
+  setMentorStatus("", false);
+});
+
+// ── Render results ────────────────────────────────────────────────────────
+
+function renderMentorResults(data, title, skipSave = false) {
+  if (mentorResultsTitle) mentorResultsTitle.textContent = title || "無題";
+  renderMentorRadar(data.scores);
+  renderMentorScores(data.scores);
+  renderMentorHighConcept(data.highConceptAnalysis);
+  renderMentorAnalyses(data.analyses, data.scores);
+  renderMentorBoxOffice(data.boxOffice);
+  renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities);
+  mentorBusy?.classList.add("hidden");
+  mentorResults?.classList.remove("hidden");
+  mentorResults?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!skipSave) {
+    addMentorHistoryItem(title, data);
+    renderMentorHistory();
+  }
+}
+
+function renderMentorHistory() {
+  const list = loadMentorHistory();
+  if (!mentorHistory || !mentorHistoryList) return;
+  if (!list.length) { mentorHistory.classList.add("hidden"); return; }
+  mentorHistory.classList.remove("hidden");
+  mentorHistoryList.innerHTML = list.map((item) => {
+    const verdictCls = (item.data?.verdict || "").toLowerCase();
+    const dateStr = item.date ? new Date(item.date).toLocaleDateString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    return `<div class="mentor-history-item" data-id="${escapeHtml(item.id)}">
+      <div class="mentor-history-item-main">
+        <span class="mentor-verdict-badge mentor-verdict-badge-sm ${verdictCls}">${item.data?.verdict || "—"}</span>
+        <span class="mentor-history-title">${escapeHtml(item.title)}</span>
+        <span class="mentor-history-date">${dateStr}</span>
+      </div>
+      <button class="icon-button mentor-history-delete" data-delete-id="${escapeHtml(item.id)}" aria-label="削除" type="button">✕</button>
+    </div>`;
+  }).join("");
+
+  mentorHistoryList.querySelectorAll(".mentor-history-item-main").forEach((el) => {
+    el.addEventListener("click", () => {
+      const id = el.closest(".mentor-history-item")?.dataset.id;
+      const found = loadMentorHistory().find((i) => i.id === id);
+      if (!found) return;
+      mentorInputSection?.classList.add("hidden");
+      renderMentorResults(found.data, found.title, true);
+    });
+  });
+  mentorHistoryList.querySelectorAll(".mentor-history-delete").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.deleteId;
+      saveMentorHistory(loadMentorHistory().filter((i) => i.id !== id));
+      renderMentorHistory();
+    });
+  });
+}
+
+const MENTOR_AXES = [
+  { key: "marketability", label: "市場性" },
+  { key: "emotionalEngineering", label: "感情設計" },
+  { key: "firstTenPages", label: "冒頭フック" },
+  { key: "realityCheck", label: "リアリティ" },
+  { key: "structure", label: "構造" },
+];
+
+const MENTOR_ANALYSIS_LABELS = [
+  { key: "marketability", label: "① 興行的ポテンシャルと大衆性" },
+  { key: "emotionalEngineering", label: "② 感情・恐怖の設計" },
+  { key: "firstTenPages", label: "③ 映画的フック：10ページの壁" },
+  { key: "realityCheck", label: "④ リアリティとロジックの検閲" },
+  { key: "structure", label: "⑤ 構造分析：15ビートの黄金律" },
+];
+
+function renderMentorRadar(scores) {
+  if (!mentorRadarSvg) return;
+  const cx = 110; const cy = 110; const r = 85; const n = 5;
+  const pts = (scale) => MENTOR_AXES.map((ax, i) => {
+    const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
+    const s = (Number(scores?.[ax.key]) || 0) / 100 * scale;
+    return [cx + r * s * Math.cos(angle), cy + r * s * Math.sin(angle)];
+  });
+
+  // Grid rings
+  let svg = "";
+  [0.25, 0.5, 0.75, 1].forEach((ring) => {
+    const p = pts(ring).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+    svg += `<polygon points="${p}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+  });
+  // Axis lines
+  pts(1).forEach(([x, y]) => {
+    svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+  });
+  // Score polygon
+  const scorePts = pts(1).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  svg += `<polygon points="${scorePts}" fill="rgba(229,9,20,0.25)" stroke="#e50914" stroke-width="1.5"/>`;
+  // Labels
+  const labelPts = MENTOR_AXES.map((ax, i) => {
+    const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
+    const lr = r + 22;
+    return { label: ax.label, x: cx + lr * Math.cos(angle), y: cy + lr * Math.sin(angle) };
+  });
+  labelPts.forEach(({ label, x, y }) => {
+    const anchor = x < cx - 4 ? "end" : x > cx + 4 ? "start" : "middle";
+    svg += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-size="9" fill="rgba(255,255,255,0.55)">${label}</text>`;
+  });
+
+  mentorRadarSvg.innerHTML = svg;
+}
+
+function renderMentorScores(scores) {
+  if (!mentorScores) return;
+  mentorScores.innerHTML = MENTOR_AXES.map(({ key, label }) => {
+    const val = Number(scores?.[key]) || 0;
+    const colorClass = val >= 65 ? "" : val >= 40 ? "score-mid" : "score-low";
+    return `<div class="mentor-score-item">
+      <span class="mentor-score-label">${label}</span>
+      <div class="mentor-score-bar-wrap">
+        <div class="mentor-score-bar-bg"><div class="mentor-score-bar-fill ${colorClass}" style="width:${val}%"></div></div>
+        <span class="mentor-score-value">${val}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderMentorHighConcept(hc) {
+  if (!mentorHighConcept || !hc) return;
+  const items = [
+    { label: "ログライン強度", key: "loglineStrength" },
+    { label: "フック", key: "hook" },
+    { label: "市場フィット", key: "marketFit" },
+  ];
+  mentorHighConcept.innerHTML = items.map(({ label, key }) =>
+    hc[key] ? `<div class="mentor-hc-item"><div class="mentor-hc-label">${label}</div><div class="mentor-hc-text">${escapeHtml(hc[key])}</div></div>` : "",
+  ).join("");
+}
+
+function renderMentorAnalyses(analyses, scores) {
+  if (!mentorAnalyses || !analyses) return;
+  mentorAnalyses.innerHTML = MENTOR_ANALYSIS_LABELS.map(({ key, label }) => {
+    const val = Number(scores?.[key]) || 0;
+    const text = analyses[key] || "";
+    return text ? `<div class="mentor-analysis-item">
+      <div class="mentor-analysis-header" role="button" tabindex="0" aria-expanded="false">
+        <span>${label}（${val}）</span>
+        <span class="mentor-analysis-toggle"></span>
+      </div>
+      <div class="mentor-analysis-body">${escapeHtml(text)}</div>
+    </div>` : "";
+  }).join("");
+  mentorAnalyses.querySelectorAll(".mentor-analysis-header").forEach((header) => {
+    const toggle = () => {
+      const item = header.closest(".mentor-analysis-item");
+      const open = item.classList.toggle("open");
+      header.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    header.addEventListener("click", toggle);
+    header.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+  });
+}
+
+function renderMentorBoxOffice(bo) {
+  if (!mentorBoxOffice || !bo) return;
+  const items = [
+    { label: "ターゲット層", key: "targetAudience" },
+    { label: "年齢・性別", key: "ageGender" },
+    { label: "国内市場性", key: "domesticMarket" },
+    { label: "世界展開可能性", key: "globalPotential" },
+    { label: "想定興行規模", key: "estimatedScale" },
+  ];
+  mentorBoxOffice.innerHTML = items.map(({ label, key }) =>
+    bo[key] ? `<div class="mentor-bo-item"><div class="mentor-bo-label">${label}</div><div class="mentor-bo-value">${escapeHtml(bo[key])}</div></div>` : "",
+  ).join("");
+}
+
+function renderMentorVerdict(verdict, reason, priorities) {
+  if (mentorVerdictBlock) {
+    const cls = (verdict || "").toLowerCase();
+    mentorVerdictBlock.innerHTML = `
+      <div class="mentor-verdict-badge ${cls}">${verdict || "—"}</div>
+      <p class="mentor-verdict-reason">${escapeHtml(reason || "")}</p>`;
+  }
+  if (mentorPriorities && Array.isArray(priorities) && priorities.length) {
+    mentorPriorities.innerHTML = `<p class="mentor-priorities-label">改稿優先順位</p>` +
+      priorities.map((p, i) =>
+        `<div class="mentor-priority-item"><span class="mentor-priority-num">${i + 1}</span><span>${escapeHtml(p)}</span></div>`,
+      ).join("");
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────

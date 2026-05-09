@@ -111,6 +111,7 @@ const server = http.createServer(async (request, response) => {
   if (requestUrl.pathname === "/api/analyze/logline") return handleAnalyzeLogline(request, response);
   if (requestUrl.pathname === "/api/gemini/analyze") return handleGeminiAnalyze(request, response);
   if (requestUrl.pathname === "/api/gemini/mentor") return handleGeminiMentor(request, response);
+  if (requestUrl.pathname === "/api/mentor/analyze") return handleMentorAnalyze(request, response);
   if (requestUrl.pathname === "/api/gemini-usage") return handleGeminiUsage(request, response);
   serveStatic(requestUrl, response);
 });
@@ -758,6 +759,152 @@ async function handleGeminiMentor(request, response) {
   }
 }
 
+// ── Mentor analysis ───────────────────────────────────────────────────────
+
+const MENTOR_SYSTEM_INSTRUCTION = `あなたは映像企画の市場性・構造・感情設計を分析する実戦型エグゼクティブ・プロデューサーです。
+Jホラーを世界市場へ押し上げてきた経験則と、国際共同制作・ライターズルームでの厳しい合評知見を内部論理として持ちます。
+あなたの役割は「優しいフィードバック」ではなく、「この企画は市場で戦えるか？」を冷静かつ峻烈に判定することです。
+
+分析対象は完成脚本ではなく、企画・プロット開発段階のテキストです。
+（ログライン、プロット、treatment、箱書き、企画書、アイデアメモなど）
+短い素材からでも鋭く分析してください。情報不足の項目は推測ではなくその旨を明記してください。
+
+以下のJSON形式で必ず返してください：
+{
+  "scores": {
+    "marketability": 0から100の整数,
+    "emotionalEngineering": 0から100の整数,
+    "firstTenPages": 0から100の整数,
+    "realityCheck": 0から100の整数,
+    "structure": 0から100の整数
+  },
+  "analyses": {
+    "marketability": "①興行的ポテンシャルと大衆性の分析（200〜400字）",
+    "emotionalEngineering": "②感情・恐怖の設計の分析（200〜400字）",
+    "firstTenPages": "③映画的フック：10ページの壁の分析（200〜400字）",
+    "realityCheck": "④リアリティとロジックの検閲（200〜400字）",
+    "structure": "⑤構造分析：15ビートの黄金律（200〜400字）"
+  },
+  "highConceptAnalysis": {
+    "loglineStrength": "ログライン強度の評価（100〜200字）",
+    "hook": "フックの評価（100〜200字）",
+    "marketFit": "市場フィット分析（100〜200字）"
+  },
+  "boxOffice": {
+    "targetAudience": "想定ターゲット層",
+    "ageGender": "年齢層・性別分布",
+    "domesticMarket": "国内市場性の評価",
+    "globalPotential": "世界展開可能性の評価",
+    "estimatedScale": "想定興行規模（例：単館系〜中規模、10億〜50億円クラス等）"
+  },
+  "verdict": "GO" または "REWRITE" または "PASS",
+  "verdictReason": "判定理由（200〜300字）",
+  "rewritePriorities": ["改稿優先事項1", "改稿優先事項2", "改稿優先事項3"]
+}
+
+スコアリング基準：
+- marketability: ハイコンセプト強度、世間認知ズレ、世界市場への射程
+- emotionalEngineering: 生理的反応設計（恐怖・緊張・不安）、感情報酬（カタルシス）
+- firstTenPages: 冒頭異常事態の強度、初動拘束力、reader retention
+- realityCheck: 設定矛盾・プロットホールの少なさ、Motivation整合性、世界ルール維持
+- structure: Save the Cat 15ビート配置精度、テンポバランス、Ratio分析
+
+判定基準：
+- GO: 市場で戦える企画。総合平均65以上かつ致命的欠陥なし
+- REWRITE: 潜在力はあるが構造・市場性の根本的再構築が必要
+- PASS: 市場性・構造・感情設計のいずれかに修正不能な致命的欠陥がある
+
+峻烈かつロジカルに、映画への情熱をもって分析してください。甘やかさず、しかし建設的に。`;
+
+function buildMentorPrompt({ title, sourceText }) {
+  const lines = [];
+  if (title) lines.push(`企画名・タイトル: ${title}`);
+  lines.push("【企画テキスト】");
+  lines.push(sourceText.slice(0, 60000));
+  return lines.join("\n\n");
+}
+
+function normalizeMentorResponse(raw) {
+  const scores = raw.scores || {};
+  return {
+    scores: {
+      marketability: clampScore(scores.marketability),
+      emotionalEngineering: clampScore(scores.emotionalEngineering),
+      firstTenPages: clampScore(scores.firstTenPages),
+      realityCheck: clampScore(scores.realityCheck),
+      structure: clampScore(scores.structure),
+    },
+    analyses: {
+      marketability: cleanText(raw.analyses?.marketability || ""),
+      emotionalEngineering: cleanText(raw.analyses?.emotionalEngineering || ""),
+      firstTenPages: cleanText(raw.analyses?.firstTenPages || ""),
+      realityCheck: cleanText(raw.analyses?.realityCheck || ""),
+      structure: cleanText(raw.analyses?.structure || ""),
+    },
+    highConceptAnalysis: {
+      loglineStrength: cleanText(raw.highConceptAnalysis?.loglineStrength || ""),
+      hook: cleanText(raw.highConceptAnalysis?.hook || ""),
+      marketFit: cleanText(raw.highConceptAnalysis?.marketFit || ""),
+    },
+    boxOffice: {
+      targetAudience: cleanText(raw.boxOffice?.targetAudience || ""),
+      ageGender: cleanText(raw.boxOffice?.ageGender || ""),
+      domesticMarket: cleanText(raw.boxOffice?.domesticMarket || ""),
+      globalPotential: cleanText(raw.boxOffice?.globalPotential || ""),
+      estimatedScale: cleanText(raw.boxOffice?.estimatedScale || ""),
+    },
+    verdict: ["GO", "REWRITE", "PASS"].includes(raw.verdict) ? raw.verdict : "REWRITE",
+    verdictReason: cleanText(raw.verdictReason || ""),
+    rewritePriorities: (Array.isArray(raw.rewritePriorities) ? raw.rewritePriorities : []).map(cleanText).filter(Boolean).slice(0, 6),
+  };
+}
+
+function clampScore(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 0;
+}
+
+async function handleMentorAnalyze(request, response) {
+  if (request.method !== "POST") return sendJson(response, 405, { error: "POSTでリクエストしてください。" });
+  try {
+    let sourceText = "";
+    let title = "";
+
+    const contentType = request.headers["content-type"] || "";
+    if (contentType.includes("multipart/form-data")) {
+      const { fileBuffer, fileName, mimeType, fields } = await readMultipartFile(request, { maxBytes: 15_000_000, fieldName: "file" });
+      title = cleanText(fields.title || "");
+      sourceText = await extractTextFromUpload({ fileBuffer, fileName, mimeType });
+    } else {
+      const payload = await readJsonBody(request);
+      title = cleanText(payload.title || "");
+      sourceText = cleanText(payload.text || payload.sourceText || "");
+    }
+
+    if (!sourceText) return sendJson(response, 400, { error: "企画テキストまたはファイルを指定してください。" });
+
+    const result = await geminiClients.mentor.generate({
+      systemInstruction: MENTOR_SYSTEM_INSTRUCTION,
+      prompt: buildMentorPrompt({ title, sourceText }),
+      temperature: 0.4,
+      responseMimeType: "application/json",
+    });
+
+    if (!result.json) {
+      console.error("[Mentor] JSON parse failed. Raw text:", result.text?.slice(0, 500));
+      const error = new Error("Geminiから有効なJSONが返されませんでした。");
+      error.statusCode = 502;
+      throw error;
+    }
+
+    sendJson(response, 200, normalizeMentorResponse(result.json));
+  } catch (error) {
+    sendJson(response, error.statusCode || 502, { error: error.message || "Mentor解析に失敗しました。" });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function normalizeInput(value) {
   const raw = cleanText(value);
   const tmdbId = raw.match(/themoviedb\.org\/movie\/(\d+)/i)?.[1];
@@ -866,7 +1013,11 @@ async function callGemini({ apiKey, model, systemInstruction, prompt, temperatur
   if (!response.ok) {
     throw new Error(payload.error?.message || `Gemini APIの取得に失敗しました。HTTP ${response.status}`);
   }
-  const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim() || "";
+  const text = (payload.candidates?.[0]?.content?.parts || [])
+    .filter((part) => !part.thought)
+    .map((part) => part.text || "")
+    .join("\n")
+    .trim();
   incrementGeminiUsage(model);
   return {
     model,

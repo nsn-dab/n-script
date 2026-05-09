@@ -1,4 +1,4 @@
-const CACHE_NAME = "n-script-v5";
+const CACHE_NAME = "n-script-v7";
 const APP_ASSETS = [
   "/",
   "/index.html",

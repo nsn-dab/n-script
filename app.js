@@ -41,19 +41,6 @@ const sampleMovies = [
   },
 ];
 
-let movies = loadMovies();
-let reverseBeats = loadReverseBeats();
-let editingId = null;
-let pendingConfirmAction = null;
-let detailMovieId = null;
-let currentStatusFilter = "all";
-let formStatus = "";
-let analyzeSourceType = "manual";
-let scriptMode = "script_db";
-let editingAnalyzeId = null;
-let detailAnalyzeId = null;
-let currentAnalyzeFilter = "all";
-
 const analyzeBeatDefinitions = [
   { id: "opening_image", label: "オープニング・イメージ", page: "1", ratio: 0.01, placeholder: "物語のトーンと変化前の主人公を示す" },
   { id: "theme_stated", label: "テーマの提示", page: "5", ratio: 0.05, placeholder: "何についての話かセリフ等で語られる" },
@@ -72,6 +59,25 @@ const analyzeBeatDefinitions = [
   { id: "final_image", label: "ファイナル・イメージ", page: "110", ratio: 1, placeholder: "変化した後の世界。1との対比" },
 ];
 
+let movies = loadMovies();
+let reverseBeats = loadReverseBeats();
+let editingId = null;
+let pendingConfirmAction = null;
+let detailMovieId = null;
+let currentStatusFilter = "all";
+let formStatus = "";
+let analyzeSourceType = "manual";
+let scriptMode = "script_db";
+let editingAnalyzeId = null;
+let detailAnalyzeId = null;
+let currentAnalyzeFilter = "all";
+let candidateDialogSelectHandler = null;
+let candidateDialogCancelHandler = null;
+let analyzeCandidateOnCancel = null;
+let analyzeScriptSearchGeneration = 0;
+let scriptDbPrefetch = null;
+let analyzeElapsedTimer = null;
+
 const form = document.querySelector("#movieForm");
 const openFormButton = document.querySelector("#openFormButton");
 const closeFormButton = document.querySelector("#closeFormButton");
@@ -89,6 +95,10 @@ const confirmOkButton = document.querySelector("#confirmOkButton");
 const candidateDialog = document.querySelector("#candidateDialog");
 const candidateList = document.querySelector("#candidateList");
 const candidateCloseButton = document.querySelector("#candidateCloseButton");
+const analyzeCandidateBackdrop = document.querySelector("#analyzeCandidateBackdrop");
+const analyzeCandidateDialog = document.querySelector("#analyzeCandidateDialog");
+const analyzeCandidateList = document.querySelector("#analyzeCandidateList");
+const analyzeCandidateCloseButton = document.querySelector("#analyzeCandidateCloseButton");
 const analyzeDialog = document.querySelector("#analyzeDialog");
 const closeAnalyzeButton = document.querySelector("#closeAnalyzeButton");
 const analyzeDialogTitle = document.querySelector("#analyzeDialogTitle");
@@ -146,7 +156,6 @@ const analyzeStatus = document.querySelector("#analyzeStatus");
 const analyzeSourceButtons = document.querySelectorAll("[data-analyze-source]");
 const manualAnalyzeFields = document.querySelector("#manualAnalyzeFields");
 const scriptAnalyzeFields = document.querySelector("#scriptAnalyzeFields");
-const videoAnalyzeFields = document.querySelector("#videoAnalyzeFields");
 const manualBeatFields = document.querySelector("#manualBeatFields");
 const analyzeLoglineField = document.querySelector("#analyzeLoglineField");
 const analyzeLoglineInput = document.querySelector("#analyzeLoglineInput");
@@ -154,11 +163,23 @@ const generateLoglineButton = document.querySelector("#generateLoglineButton");
 const analyzeScriptFileInput = document.querySelector("#analyzeScriptFileInput");
 const scriptDropZone = document.querySelector("#scriptDropZone");
 const scriptFileName = document.querySelector("#scriptFileName");
-const analyzeScriptDbButton = document.querySelector("#analyzeScriptDbButton");
+const scriptModeToggle = document.querySelector("#scriptModeToggle");
+const scriptUploadHelp = document.querySelector("#scriptUploadHelp");
+const analyzeDialogBusyOverlay = document.querySelector("#analyzeDialogBusyOverlay");
+const analyzeDialogBusyLabel = document.querySelector("#analyzeDialogBusyLabel");
+const analyzeDialogBusyHint = document.querySelector("#analyzeDialogBusyHint");
+const analyzeDialogBusyElapsed = document.querySelector("#analyzeDialogBusyElapsed");
+const analyzeElapsedSeconds = document.querySelector("#analyzeElapsedSeconds");
+const analyzeCompletePanel = document.querySelector("#analyzeCompletePanel");
+const analyzeCompleteOkButton = document.querySelector("#analyzeCompleteOkButton");
+const analyzeScriptDbActions = document.querySelector("#analyzeScriptDbActions");
+const analyzeScriptDbSearchButton = document.querySelector("#analyzeScriptDbSearchButton");
+const scriptDbConfirmPanel = document.querySelector("#scriptDbConfirmPanel");
+const scriptDbConfirmTitleText = document.querySelector("#scriptDbConfirmTitleText");
+const scriptDbConfirmStartButton = document.querySelector("#scriptDbConfirmStartButton");
+const scriptDbConfirmCancelButton = document.querySelector("#scriptDbConfirmCancelButton");
 const analyzeScriptUploadButton = document.querySelector("#analyzeScriptUploadButton");
 const scriptModeButtons = document.querySelectorAll("[data-script-mode]");
-const analyzeVideoUrlInput = document.querySelector("#analyzeVideoUrlInput");
-const analyzeVideoFileInput = document.querySelector("#analyzeVideoFileInput");
 const analyzeSearchInput = document.querySelector("#analyzeSearchInput");
 const analyzeSortSelect = document.querySelector("#analyzeSortSelect");
 const analyzeFilterButtons = document.querySelectorAll("[data-analyze-filter]");
@@ -169,7 +190,6 @@ const analyzeCounts = {
   all: document.querySelector("#allAnalyzeCount"),
   manual: document.querySelector("#manualAnalyzeCount"),
   script: document.querySelector("#scriptAnalyzeCount"),
-  video: document.querySelector("#videoAnalyzeCount"),
 };
 const tabButtons = document.querySelectorAll(".tab-button[data-tab]");
 const tabPanels = document.querySelectorAll(".tab-panel");
@@ -253,7 +273,21 @@ analyzeScriptFileInput.addEventListener("change", updateScriptFileName);
 scriptDropZone.addEventListener("dragover", handleScriptDragOver);
 scriptDropZone.addEventListener("dragleave", handleScriptDragLeave);
 scriptDropZone.addEventListener("drop", handleScriptDrop);
-analyzeScriptDbButton?.addEventListener("click", () => runScriptDbAnalyze());
+analyzeScriptDbSearchButton?.addEventListener("click", () => runScriptDbSearch());
+scriptDbConfirmStartButton?.addEventListener("click", () => runScriptDbConfirmedPipeline());
+scriptDbConfirmCancelButton?.addEventListener("click", () => {
+  hideScriptDbConfirmPanel();
+  setAnalyzeStatus("", false);
+  reverseInputs.title.focus();
+});
+analyzeCompleteOkButton?.addEventListener("click", () => {
+  analyzeCompletePanel?.classList.add("hidden");
+  closeAnalyzeSetup();
+});
+reverseInputs.title.addEventListener("input", () => {
+  hideScriptDbConfirmPanel();
+  clearScriptDbPrefetch();
+});
 analyzeScriptUploadButton?.addEventListener("click", () => runScriptUploadAnalyze());
 scriptModeButtons.forEach((button) => button.addEventListener("click", () => setScriptMode(button.dataset.scriptMode)));
 tabButtons.forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
@@ -433,7 +467,7 @@ function toggleAnimatedPanel(panel, shouldShow) {
 }
 
 function setAnalyzeFilter(filter) {
-  currentAnalyzeFilter = ["all", "manual", "script", "video"].includes(filter) ? filter : "all";
+  currentAnalyzeFilter = ["all", "manual", "script"].includes(filter) ? filter : "all";
   analyzeFilterButtons.forEach((button) => {
     const selected = button.dataset.analyzeFilter === currentAnalyzeFilter;
     button.classList.toggle("filter-pill-active", selected);
@@ -841,7 +875,7 @@ async function fetchAndApply(url, button, defaultLabel, loadingLabel) {
   button.textContent = loadingLabel;
   try {
     const response = await fetch(url);
-    const data = await response.json();
+    const data = await readResponseJson(response);
     if (!response.ok) throw new Error(data.error || "映画情報を取得できませんでした。");
     if (Array.isArray(data.candidates)) {
       openCandidateDialog(data.candidates);
@@ -856,7 +890,17 @@ async function fetchAndApply(url, button, defaultLabel, loadingLabel) {
   }
 }
 
-function openCandidateDialog(candidates) {
+function openCandidateDialog(candidates, options = {}) {
+  const discoverSelectHandler = async (candidate) => {
+    closeCandidateDialog({ triggerCancel: false });
+    await fetchAndApply(`/api/search?tmdbId=${encodeURIComponent(candidate.tmdbId)}`, fetchTitleInfoButton, "タイトルから取得", "取得中");
+  };
+  const selectHandler = typeof options.onSelect === "function" ? options.onSelect : discoverSelectHandler;
+  candidateDialogSelectHandler = selectHandler;
+  candidateDialogCancelHandler = typeof options.onCancel === "function" ? options.onCancel : null;
+  const overlayTop = options.overlayTop === true;
+  candidateDialog.classList.toggle("candidate-dialog-on-top", overlayTop);
+  candidateBackdrop.classList.toggle("candidate-backdrop-on-top", overlayTop);
   candidateList.innerHTML = "";
   candidates.forEach((candidate) => {
     const button = document.createElement("button");
@@ -872,7 +916,13 @@ function openCandidateDialog(candidates) {
         <span class="${candidate.overview ? "" : "candidate-empty-overview"}">${escapeHtml(description)}</span>
       </span>
     `;
-    button.addEventListener("click", () => selectMovieCandidate(candidate.tmdbId));
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      queueMicrotask(() => {
+        void selectHandler(candidate);
+      });
+    });
     candidateList.append(button);
   });
   candidateDialog.classList.remove("hidden");
@@ -881,19 +931,77 @@ function openCandidateDialog(candidates) {
   candidateCloseButton.focus();
 }
 
-function closeCandidateDialog() {
+function closeCandidateDialog(options = {}) {
+  const triggerCancel = options.triggerCancel ?? true;
+  const cancelHandler = candidateDialogCancelHandler;
+  candidateDialogSelectHandler = null;
+  candidateDialogCancelHandler = null;
+  candidateDialog.classList.remove("candidate-dialog-on-top");
+  candidateBackdrop.classList.remove("candidate-backdrop-on-top");
   candidateDialog.classList.add("hidden");
   candidateBackdrop.classList.add("hidden");
   document.body.classList.remove("dialog-open");
+  if (triggerCancel && cancelHandler) cancelHandler();
 }
 
-async function selectMovieCandidate(tmdbId) {
-  closeCandidateDialog();
-  await fetchAndApply(`/api/search?tmdbId=${encodeURIComponent(tmdbId)}`, fetchTitleInfoButton, "タイトルから取得", "取得中");
+function openAnalyzeCandidateDialog(candidates, onPick, onCancel) {
+  if (!analyzeCandidateList || !analyzeCandidateDialog || !analyzeCandidateBackdrop) {
+    setAnalyzeStatus("候補UIを読み込めませんでした。ページを再読み込みしてください。", true);
+    return;
+  }
+  analyzeCandidateOnCancel = typeof onCancel === "function" ? onCancel : null;
+  analyzeCandidateList.innerHTML = "";
+  candidates.forEach((candidate) => {
+    const button = document.createElement("button");
+    button.className = "candidate-item";
+    button.type = "button";
+    const meta = [candidate.originalTitle, candidate.releaseDate || candidate.year, candidate.language, `TMDb ${candidate.tmdbId}`].filter(Boolean).join(" ・ ");
+    const description = candidate.overview || "概要未登録。ポスター、公開日、原題、TMDb IDで確認してください。";
+    button.innerHTML = `
+      <span class="candidate-poster">${candidate.posterUrl ? `<img src="${escapeAttribute(candidate.posterUrl)}" alt="" />` : "NO IMAGE"}</span>
+      <span class="candidate-body">
+        <strong>${escapeHtml(candidate.title || "無題")}</strong>
+        <small>${escapeHtml(meta || "詳細情報なし")}</small>
+        <span class="${candidate.overview ? "" : "candidate-empty-overview"}">${escapeHtml(description)}</span>
+      </span>
+    `;
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      queueMicrotask(() => {
+        closeAnalyzeCandidateDialog({ triggerCancel: false });
+        Promise.resolve(onPick(candidate)).catch((error) => {
+          setAnalyzeStatus(error.message || "処理に失敗しました。", true);
+        });
+      });
+    });
+    analyzeCandidateList.append(button);
+  });
+  analyzeCandidateBackdrop.classList.remove("hidden");
+  analyzeCandidateDialog.classList.remove("hidden");
+  document.body.classList.add("dialog-open");
+  analyzeCandidateCloseButton?.focus();
+}
+
+function closeAnalyzeCandidateDialog(options = {}) {
+  if (!analyzeCandidateDialog || !analyzeCandidateBackdrop) return;
+  const triggerCancel = options.triggerCancel ?? true;
+  const done = analyzeCandidateOnCancel;
+  analyzeCandidateOnCancel = null;
+  analyzeCandidateDialog.classList.add("hidden");
+  analyzeCandidateBackdrop.classList.add("hidden");
+  if (!analyzeDialog.classList.contains("hidden")) {
+    document.body.classList.add("dialog-open");
+  } else {
+    document.body.classList.remove("dialog-open");
+  }
+  if (triggerCancel && done) done();
 }
 
 candidateCloseButton.addEventListener("click", closeCandidateDialog);
 candidateBackdrop.addEventListener("click", closeCandidateDialog);
+analyzeCandidateCloseButton?.addEventListener("click", closeAnalyzeCandidateDialog);
+analyzeCandidateBackdrop?.addEventListener("click", closeAnalyzeCandidateDialog);
 
 function buildFetchErrorMessage(error) {
   const message = error.message || "情報を取得できませんでした。";
@@ -934,59 +1042,152 @@ function escapeAttribute(value) {
   return escapeHtml(value);
 }
 
+function decodeEntities(value) {
+  return String(value)
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&#x2F;/g, "/");
+}
+
+function cleanText(value) {
+  return decodeEntities(String(value || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+}
+
+async function readResponseJson(response) {
+  const text = await response.text();
+  const trimmed = String(text || "").trim();
+  if (!trimmed) {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: 応答が空です。node server.js が起動しているか確認してください。`);
+    }
+    return {};
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const preview = trimmed.replace(/\s+/g, " ").slice(0, 200);
+    const hint =
+      trimmed === "Not found" || trimmed.startsWith("Not found")
+        ? " API が静的404になっています。movietool フォルダで `node server.js` を起動し、http://localhost:5173/index.html から開いてください。"
+        : "";
+    throw new Error(`${preview} (HTTP ${response.status})${hint}`);
+  }
+}
+
 function renderReverseBeats() {
   renderAnalyzeBeats();
 }
 
+function setAnalyzeBusy(isBusy, message = "処理中・・・") {
+  if (!analyzeDialogBusyOverlay || !analyzeDialogBusyLabel) return;
+  if (isBusy) {
+    const isAnalyzing = message.includes("解析");
+    analyzeDialogBusyLabel.textContent = message;
+    analyzeDialogBusyOverlay.classList.remove("hidden");
+    analyzeDialogBusyOverlay.setAttribute("aria-busy", "true");
+    if (closeAnalyzeButton) closeAnalyzeButton.disabled = true;
+    analyzeDialogBusyHint?.classList.toggle("hidden", !isAnalyzing);
+    analyzeDialogBusyElapsed?.classList.toggle("hidden", !isAnalyzing);
+    if (analyzeElapsedTimer) clearInterval(analyzeElapsedTimer);
+    if (isAnalyzing) {
+      let secs = 0;
+      if (analyzeElapsedSeconds) analyzeElapsedSeconds.textContent = "0";
+      analyzeElapsedTimer = setInterval(() => {
+        secs += 1;
+        if (analyzeElapsedSeconds) analyzeElapsedSeconds.textContent = String(secs);
+      }, 1000);
+    }
+  } else {
+    analyzeDialogBusyOverlay.classList.add("hidden");
+    analyzeDialogBusyOverlay.removeAttribute("aria-busy");
+    if (closeAnalyzeButton) closeAnalyzeButton.disabled = false;
+    analyzeDialogBusyHint?.classList.add("hidden");
+    analyzeDialogBusyElapsed?.classList.add("hidden");
+    if (analyzeElapsedTimer) { clearInterval(analyzeElapsedTimer); analyzeElapsedTimer = null; }
+  }
+}
+
+function hideScriptDbConfirmPanel() {
+  scriptDbConfirmPanel?.classList.add("hidden");
+  if (analyzeSourceType === "script" && scriptMode === "script_db") {
+    analyzeTitleField?.classList.remove("hidden");
+    analyzeScriptDbActions?.classList.remove("hidden");
+  }
+}
+
+function showScriptDbConfirmPanel(displayTitle) {
+  const t = String(displayTitle || "").trim() || "（タイトルなし）";
+  if (scriptDbConfirmTitleText) scriptDbConfirmTitleText.textContent = t;
+  analyzeTitleField?.classList.add("hidden");
+  analyzeScriptDbActions?.classList.add("hidden");
+  scriptDbConfirmPanel?.classList.remove("hidden");
+  setAnalyzeStatus("", false);
+}
+
 function openAnalyzeSetup(sourceType) {
-  analyzeSourceType = ["manual", "script", "video"].includes(sourceType) ? sourceType : "manual";
+  analyzeSourceType = ["manual", "script"].includes(sourceType) ? sourceType : "manual";
   scriptMode = "script_db";
   editingAnalyzeId = null;
   reverseForm.reset();
+  clearScriptDbPrefetch();
   updateScriptFileName();
   clearManualBeatFields();
   renderManualBeatFields();
   manualAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "manual");
   scriptAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "script");
-  videoAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "video");
   updateAnalyzeFormMode();
   const copy = {
     manual: ["Manual", "映画を観ながら15ビートを自分で埋めていく修行モード。"],
-    script: ["Script", "脚本DB、または脚本ファイルからAIが15ビートを抽出します。"],
-    video: ["Video", "動画ファイルまたはURLから映像・音声を解析するモード。"],
+    script: ["Script", "脚本DB、または脚本ファイルからデータを取得・解析し、15ビートで逆箱します。"],
   };
   updateManualBeatGuides();
   analyzeDialogTitle.textContent = copy[analyzeSourceType][0];
-  analyzeDialogSubtitle.textContent = copy[analyzeSourceType][1];
+  const subtitle = copy[analyzeSourceType][1];
+  analyzeDialogSubtitle.textContent = subtitle;
+  analyzeDialogSubtitle.classList.toggle("hidden", !String(subtitle || "").trim());
   extractAnalyzeButton.textContent = analyzeSourceType === "manual" ? "保存する" : "次の実装で接続";
   extractAnalyzeButton.disabled = analyzeSourceType !== "manual";
   deleteAnalyzeButton.classList.add("hidden");
   setAnalyzeStatus("", false);
   analyzeBackdrop.classList.remove("hidden");
   analyzeDialog.classList.remove("hidden");
+  hideScriptDbConfirmPanel();
   reverseInputs.title.focus();
 }
 
 function updateAnalyzeFormMode() {
   const isManual = analyzeSourceType === "manual";
   const isScript = analyzeSourceType === "script";
+  reverseForm.classList.toggle("script-mode", isScript);
   analyzeTitleField.classList.toggle("hidden", isScript && scriptMode === "file_upload");
   analyzeRuntimeField.classList.toggle("hidden", !isManual);
   analyzeLoglineField.classList.toggle("hidden", !isManual);
   generateLoglineButton.classList.toggle("hidden", !isManual);
   analyzeTitleLabel.textContent = isScript ? "タイトル" : "映画タイトル";
   reverseInputs.title.placeholder = isScript ? "例: 花束みたいな恋をした" : "例: TALK TO ME";
-  analyzeScriptDbButton?.classList.toggle("hidden", !isScript || scriptMode !== "script_db");
+  scriptModeToggle?.classList.toggle("hidden", !isScript);
+  analyzeScriptDbActions?.classList.toggle("hidden", !isScript || scriptMode !== "script_db");
   scriptModeButtons.forEach((button) => {
     button.classList.toggle("filter-pill-active", button.dataset.scriptMode === scriptMode);
   });
   scriptDropZone?.classList.toggle("hidden", !isScript || scriptMode !== "file_upload");
+  scriptUploadHelp?.classList.toggle("hidden", !isScript || scriptMode !== "file_upload");
   analyzeScriptUploadButton?.classList.toggle("hidden", !isScript || scriptMode !== "file_upload");
   analyzeFormActions?.classList.toggle("hidden", !isManual);
+  if (!isScript || scriptMode !== "script_db") {
+    scriptDbConfirmPanel?.classList.add("hidden");
+  }
 }
 
 function setScriptMode(mode) {
   scriptMode = mode === "file_upload" ? "file_upload" : "script_db";
+  if (scriptMode === "file_upload") {
+    clearScriptDbPrefetch();
+    hideScriptDbConfirmPanel();
+  }
   updateAnalyzeFormMode();
   setAnalyzeStatus("", false);
   if (scriptMode === "file_upload") {
@@ -996,21 +1197,153 @@ function setScriptMode(mode) {
   }
 }
 
-async function runScriptDbAnalyze() {
+function clearScriptDbPrefetch() {
+  scriptDbPrefetch = null;
+}
+
+async function runScriptDbSearch() {
   analyzeSourceType = "script";
   scriptMode = "script_db";
   updateAnalyzeFormMode();
-  await extractAnalyzeBeats({ scriptMode: "script_db" });
+  const title = reverseInputs.title.value.trim();
+  if (!title) {
+    setAnalyzeStatus("タイトルを入力してください。", true);
+    return;
+  }
+  hideScriptDbConfirmPanel();
+  clearScriptDbPrefetch();
+  analyzeScriptSearchGeneration += 1;
+  const generation = analyzeScriptSearchGeneration;
+  setAnalyzeBusy(true, "検索中・・・");
+  setAnalyzeStatus("", false);
+  try {
+    const response = await fetch(`/api/search?title=${encodeURIComponent(title)}`);
+    const data = await readResponseJson(response);
+    if (generation !== analyzeScriptSearchGeneration) return;
+    if (!response.ok) throw new Error(data.error || "タイトル検索に失敗しました。");
+
+    if (Array.isArray(data.candidates) && data.candidates.length > 1) {
+      setAnalyzeBusy(false);
+      openAnalyzeCandidateDialog(
+        data.candidates,
+        async (candidate) => {
+          const displayTitle = pickCandidateDisplayTitle(candidate, title);
+          const originalTitle = cleanText(candidate?.originalTitle || "");
+          const searchTitle = originalTitle || displayTitle;
+          const year = String(candidate?.year || "");
+          reverseInputs.title.value = displayTitle;
+          await fetchScriptThenConfirm(displayTitle, searchTitle, { originalTitle, year });
+        },
+        () => setAnalyzeStatus("候補選択をキャンセルしました。", true),
+      );
+      return;
+    }
+
+    let displayTitle, searchTitle, originalTitle, year;
+    if (Array.isArray(data.candidates) && data.candidates.length === 1) {
+      displayTitle = pickCandidateDisplayTitle(data.candidates[0], title);
+      originalTitle = cleanText(data.candidates[0]?.originalTitle || "");
+      searchTitle = originalTitle || displayTitle;
+      year = String(data.candidates[0]?.year || "");
+    } else {
+      displayTitle = cleanText(data.title || title);
+      searchTitle = displayTitle;
+      originalTitle = "";
+      year = "";
+    }
+    reverseInputs.title.value = displayTitle;
+  } catch (error) {
+    if (generation !== analyzeScriptSearchGeneration) return;
+    setAnalyzeStatus(error.message || "タイトル候補の取得に失敗しました。", true);
+    setAnalyzeBusy(false);
+    return;
+  }
+  if (generation !== analyzeScriptSearchGeneration) return;
+  setAnalyzeBusy(false);
+  await fetchScriptThenConfirm(
+    reverseInputs.title.value.trim(),
+    reverseInputs.title.value.trim(),
+    { originalTitle: "", year: "" },
+  );
+}
+
+async function fetchScriptThenConfirm(displayTitle, searchTitle, { originalTitle = "", year = "" } = {}) {
+  clearScriptDbPrefetch();
+  analyzeScriptSearchGeneration += 1;
+  const generation = analyzeScriptSearchGeneration;
+  setAnalyzeBusy(true, "脚本を取得中・・・");
+  setAnalyzeStatus("", false);
+  try {
+    const response = await fetch("/api/analyze/script-db/fetch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: searchTitle || displayTitle, originalTitle, year }),
+    });
+    const data = await readResponseJson(response);
+    if (generation !== analyzeScriptSearchGeneration) return;
+    if (!response.ok) throw new Error(data.error || "脚本の取得に失敗しました。");
+    const scriptSessionId = data.scriptSessionId;
+    if (!scriptSessionId) throw new Error("脚本セッションの取得に失敗しました。");
+    scriptDbPrefetch = {
+      scriptSessionId,
+      sourceUrl: data.sourceUrl || "",
+      textLength: Number(data.textLength) || 0,
+      title: displayTitle || cleanText(data.title || searchTitle),
+    };
+    showScriptDbConfirmPanel(scriptDbPrefetch.title);
+  } catch (error) {
+    if (generation !== analyzeScriptSearchGeneration) return;
+    setAnalyzeStatus(error.message || "脚本の取得に失敗しました。", true);
+  } finally {
+    setAnalyzeBusy(false);
+  }
+}
+
+async function runScriptDbConfirmedPipeline() {
+  if (!scriptDbPrefetch?.scriptSessionId) {
+    setAnalyzeStatus("脚本データが見つかりません。もう一度DB検索してください。", true);
+    return;
+  }
+  analyzeScriptSearchGeneration += 1;
+  const generation = analyzeScriptSearchGeneration;
+  setAnalyzeBusy(true, "解析中・・・");
+  setAnalyzeStatus("", false);
+  try {
+    await extractAnalyzeBeats({ scriptMode: "script_db", scriptSessionId: scriptDbPrefetch.scriptSessionId });
+  } catch (error) {
+    if (generation !== analyzeScriptSearchGeneration) return;
+    setAnalyzeStatus(error.message || "解析に失敗しました。", true);
+  } finally {
+    setAnalyzeBusy(false);
+  }
 }
 
 async function runScriptUploadAnalyze() {
   analyzeSourceType = "script";
   scriptMode = "file_upload";
   updateAnalyzeFormMode();
-  await extractAnalyzeBeats({ scriptMode: "file_upload" });
+  setAnalyzeBusy(true, "解析中・・・");
+  setAnalyzeStatus("", false);
+  try {
+    await extractAnalyzeBeats({ scriptMode: "file_upload" });
+  } finally {
+    setAnalyzeBusy(false);
+  }
+}
+
+function pickCandidateDisplayTitle(candidate, fallbackTitle) {
+  const preferred = cleanText(candidate?.title || "");
+  const original = cleanText(candidate?.originalTitle || "");
+  return preferred || original || fallbackTitle;
 }
 
 function closeAnalyzeSetup() {
+  if (analyzeDialogBusyOverlay && !analyzeDialogBusyOverlay.classList.contains("hidden")) return;
+  analyzeCompletePanel?.classList.add("hidden");
+  setAnalyzeBusy(false);
+  closeAnalyzeCandidateDialog({ triggerCancel: false });
+  hideScriptDbConfirmPanel();
+  clearScriptDbPrefetch();
   analyzeBackdrop.classList.add("hidden");
   analyzeDialog.classList.add("hidden");
 }
@@ -1125,10 +1458,6 @@ async function extractAnalyzeBeats(options = {}) {
   const title = reverseInputs.title.value.trim();
   const runtime = reverseInputs.runtime.value.trim();
   const effectiveScriptMode = options.scriptMode || scriptMode;
-  if (analyzeSourceType === "video") {
-    setAnalyzeStatus("Video解析は次の実装で接続します。", true);
-    return;
-  }
   if (analyzeSourceType === "manual" && (!title || !runtime)) {
     setAnalyzeStatus("映画タイトルとruntimeを入力してください。", true);
     return;
@@ -1137,15 +1466,27 @@ async function extractAnalyzeBeats(options = {}) {
     setAnalyzeStatus("タイトルを入力してください。", true);
     return;
   }
+  const scriptSessionId = options.scriptSessionId || scriptDbPrefetch?.scriptSessionId || "";
+  if (analyzeSourceType === "script" && effectiveScriptMode === "script_db" && !cleanText(scriptSessionId)) {
+    setAnalyzeStatus("先に「脚本DBから取得」を完了してください。", true);
+    return;
+  }
   if (analyzeSourceType === "script" && effectiveScriptMode === "file_upload" && !analyzeScriptFileInput.files?.[0]) {
     setAnalyzeStatus("脚本ファイルを指定してください。", true);
     return;
   }
 
   extractAnalyzeButton.disabled = true;
-  analyzeScriptDbButton?.setAttribute("disabled", "true");
+  analyzeScriptDbSearchButton?.setAttribute("disabled", "true");
   analyzeScriptUploadButton?.setAttribute("disabled", "true");
-  setAnalyzeStatus(analyzeSourceType === "script" ? "脚本を解析しています。" : "理論値を生成しています。", false);
+  setAnalyzeStatus(
+    analyzeSourceType === "script" && effectiveScriptMode === "script_db"
+      ? "Gemini で15ビートを抽出しています。"
+      : analyzeSourceType === "script"
+        ? "脚本を解析しています。"
+        : "理論値を生成しています。",
+    false,
+  );
   try {
     const requestBody = { title, runtime, source_type: analyzeSourceType };
     let sourceMeta = { method: "manual", sourceUrl: "", fileName: "", model: "" };
@@ -1157,6 +1498,7 @@ async function extractAnalyzeBeats(options = {}) {
         requestBody.title = uploaded.title || requestBody.title || "";
         sourceMeta = { method: "file_upload", sourceUrl: "", fileName: scriptFile?.name || "", model: "" };
       } else {
+        requestBody.scriptSessionId = cleanText(scriptSessionId);
         sourceMeta = { method: "script_db", sourceUrl: "", fileName: "", model: "" };
       }
     }
@@ -1165,7 +1507,7 @@ async function extractAnalyzeBeats(options = {}) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(requestBody),
     });
-    const data = await response.json();
+    const data = await readResponseJson(response);
     if (!response.ok) throw new Error(data.error || "開始に失敗しました。");
     const beats = analyzeSourceType === "manual" ? buildManualAnalyzeBeats(data.beats || []) : normalizeAnalyzeBeats(data.beats || []);
     const payload = {
@@ -1173,7 +1515,10 @@ async function extractAnalyzeBeats(options = {}) {
       title: data.title || requestBody.title || title || "無題",
       runtime: data.runtimeMinutes || runtime || "",
       beats,
-      logline: analyzeLoglineInput.value.trim() || data.logline || "",
+      logline: analyzeSourceType === "manual"
+        ? (analyzeLoglineInput.value.trim() || data.logline || "")
+        : (data.logline || analyzeLoglineInput.value.trim() || ""),
+      storyCore: data.storyCore || null,
       sourceMeta: normalizeAnalyzeSourceMeta(data.sourceMeta, { sourceType: analyzeSourceType, ...sourceMeta }),
     };
     if (editingAnalyzeId) {
@@ -1182,13 +1527,13 @@ async function extractAnalyzeBeats(options = {}) {
       reverseBeats.unshift({ id: crypto.randomUUID(), ...payload, createdAt: Date.now(), updatedAt: "" });
     }
     saveReverseBeats();
-    closeAnalyzeSetup();
     renderAnalyzeBeats();
+    analyzeCompletePanel?.classList.remove("hidden");
   } catch (error) {
     setAnalyzeStatus(error.message || "保存に失敗しました。", true);
   } finally {
     extractAnalyzeButton.disabled = false;
-    analyzeScriptDbButton?.removeAttribute("disabled");
+    analyzeScriptDbSearchButton?.removeAttribute("disabled");
     analyzeScriptUploadButton?.removeAttribute("disabled");
   }
 }
@@ -1226,7 +1571,7 @@ async function uploadScriptFile(file) {
   formData.append("file", file);
   formData.append("title", reverseInputs.title.value.trim());
   const response = await fetch("/api/analyze/upload", { method: "POST", body: formData });
-  const data = await response.json();
+  const data = await readResponseJson(response);
   if (!response.ok) throw new Error(data.error || "脚本ファイルのアップロードに失敗しました。");
   const text = String(data.text || "");
   if (!text.trim()) throw new Error("脚本からテキストを抽出できませんでした。テキスト脚本（.txt/.md）またはテキストPDF/DOCX/PPTXを試してください。");
@@ -1278,7 +1623,7 @@ async function generateAnalyzeLogline() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ title, beats }),
     });
-    const data = await response.json();
+    const data = await readResponseJson(response);
     if (!response.ok) throw new Error(data.error || "ログライン生成に失敗しました。");
     analyzeLoglineInput.value = data.logline || "";
     setAnalyzeStatus("ログラインを反映しました。", false);
@@ -1315,8 +1660,8 @@ function normalizeAnalyzeBeats(beats) {
   return beats.map((beat) => {
     const theory = beat.theory || {};
     const actual = beat.actual || {};
-    const targetSeconds = Number.isFinite(theory.targetSeconds) ? theory.targetSeconds : 0;
-    const actualSeconds = Number.isFinite(actual.startSeconds) ? actual.startSeconds : targetSeconds;
+    const diff = beat.diff || {};
+    const actualSeconds = Number.isFinite(actual.startSeconds) ? actual.startSeconds : null;
     return {
       id: beat.id || crypto.randomUUID(),
       name: beat.name || "",
@@ -1325,9 +1670,13 @@ function normalizeAnalyzeBeats(beats) {
       actual: {
         ...actual,
         startSeconds: actualSeconds,
-        startTime: formatBeatTimestamp(actualSeconds),
+        startTime: actualSeconds !== null ? formatBeatTimestamp(actualSeconds) : (actual.startTime || null),
         summary: actual.summary || "",
+        structuralReason: actual.structuralReason || "",
+        scriptPositionPercent: actual.scriptPositionPercent ?? null,
+        pageEstimate: actual.pageEstimate ?? null,
       },
+      diff,
     };
   });
 }
@@ -1382,7 +1731,6 @@ function updateAnalyzeCounts() {
     all: reverseBeats.length,
     manual: reverseBeats.filter((item) => (item.sourceType || "manual") === "manual").length,
     script: reverseBeats.filter((item) => item.sourceType === "script").length,
-    video: reverseBeats.filter((item) => item.sourceType === "video").length,
   };
   Object.entries(counts).forEach(([key, value]) => {
     if (analyzeCounts[key]) analyzeCounts[key].textContent = value;
@@ -1399,7 +1747,6 @@ function openAnalyzeEdit(id) {
   clearManualBeatFields();
   manualAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "manual");
   scriptAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "script");
-  videoAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "video");
   updateAnalyzeFormMode();
   reverseInputs.title.value = item.title || "";
   reverseInputs.runtime.value = item.runtime || "";
@@ -1409,7 +1756,7 @@ function openAnalyzeEdit(id) {
   analyzeDialogTitle.textContent = getAnalyzeSourceLabel(analyzeSourceType);
   analyzeDialogSubtitle.textContent = "保存済みのAnalyzeデータを編集します。";
   extractAnalyzeButton.textContent = analyzeSourceType === "script" ? "Scriptを再解析" : "保存する";
-  extractAnalyzeButton.disabled = analyzeSourceType === "video";
+  extractAnalyzeButton.disabled = false;
   deleteAnalyzeButton.classList.remove("hidden");
   setAnalyzeStatus("", false);
   analyzeBackdrop.classList.remove("hidden");

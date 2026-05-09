@@ -63,7 +63,6 @@
             <div class="top-actions analyze-top-actions" aria-label="Analyze source type">
               <button class="primary-button analyze-route-button" type="button" data-analyze-source="manual"><span aria-hidden="true">＋</span> Manual</button>
               <button class="primary-button analyze-route-button" type="button" data-analyze-source="script"><span aria-hidden="true">＋</span> Script</button>
-              <button class="primary-button analyze-route-button" type="button" data-analyze-source="video"><span aria-hidden="true">＋</span> Video</button>
             </div>
           </div>
           <div class="topbar-panel hidden" data-header="mentor">
@@ -105,6 +104,20 @@
               </button>
             </div>
             <div class="candidate-list" id="candidateList"></div>
+          </section>
+
+          <div class="dialog-backdrop analyze-candidate-backdrop hidden" id="analyzeCandidateBackdrop"></div>
+          <section class="candidate-dialog analyze-candidate-dialog hidden" id="analyzeCandidateDialog" role="dialog" aria-modal="true" aria-labelledby="analyzeScriptCandidateTitle">
+            <div class="candidate-heading">
+              <div>
+                <p class="eyebrow">Analyze · Script</p>
+                <h2 id="analyzeScriptCandidateTitle">候補を選択</h2>
+              </div>
+              <button class="icon-button close-button" id="analyzeCandidateCloseButton" type="button" title="閉じる" aria-label="閉じる">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+            <div class="candidate-list" id="analyzeCandidateList"></div>
           </section>
 
           <section class="detail-dialog hidden" id="movieDetailDialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
@@ -283,7 +296,6 @@
                 <button class="filter-pill filter-pill-active" type="button" data-analyze-filter="all">すべて <span id="allAnalyzeCount">0</span></button>
                 <button class="filter-pill" type="button" data-analyze-filter="manual">Manual <span id="manualAnalyzeCount">0</span></button>
                 <button class="filter-pill" type="button" data-analyze-filter="script">Script <span id="scriptAnalyzeCount">0</span></button>
-                <button class="filter-pill" type="button" data-analyze-filter="video">Video <span id="videoAnalyzeCount">0</span></button>
               </div>
               <div class="filter-tools">
                 <label class="search-box">
@@ -355,6 +367,18 @@
           </section>
 
           <section class="analyze-dialog hidden" id="analyzeDialog" role="dialog" aria-modal="true" aria-labelledby="analyzeDialogTitle">
+            <div class="analyze-dialog-busy-overlay hidden" id="analyzeDialogBusyOverlay" aria-hidden="true">
+              <div class="analyze-dialog-busy-inner">
+                <div class="analyze-busy-spinner" aria-hidden="true"></div>
+                <p class="analyze-busy-label" id="analyzeDialogBusyLabel">検索中・・・</p>
+                <p class="analyze-busy-hint hidden" id="analyzeDialogBusyHint">解析完了まで約45秒ほどかかります。しばらくお待ちください。</p>
+                <p class="analyze-busy-elapsed hidden" id="analyzeDialogBusyElapsed"><span id="analyzeElapsedSeconds">0</span> 秒経過</p>
+              </div>
+            </div>
+            <div class="analyze-complete-panel hidden" id="analyzeCompletePanel">
+              <p class="analyze-complete-message">解析が完了しました。リストをご確認ください。</p>
+              <button class="primary-button" type="button" id="analyzeCompleteOkButton">OK</button>
+            </div>
             <div class="candidate-heading">
               <div>
                 <h2 id="analyzeDialogTitle">Manual</h2>
@@ -366,18 +390,35 @@
             </div>
 
             <form class="reverse-form analyze-form" id="reverseForm">
+              <div class="script-mode-toggle hidden" id="scriptModeToggle" aria-label="Script source mode">
+                <button class="filter-pill filter-pill-active" type="button" data-script-mode="script_db">脚本DB</button>
+                <button class="filter-pill" type="button" data-script-mode="file_upload">Upload</button>
+              </div>
               <div class="field-grid">
                 <label id="analyzeTitleField">
                   <span id="analyzeTitleLabel">映画タイトル</span>
                   <div class="fetchable-input-row analyze-title-row">
                     <input id="reverseTitleInput" name="reverseTitle" type="text" placeholder="例: TALK TO ME" />
-                    <button class="primary-button fetch-button analyze-script-db-button hidden" id="analyzeScriptDbButton" type="button">脚本DBから解析</button>
+                    <div class="analyze-script-db-actions hidden" id="analyzeScriptDbActions">
+                      <button class="primary-button fetch-button analyze-script-db-search-button" id="analyzeScriptDbSearchButton" type="button">DB検索</button>
+                    </div>
                   </div>
                 </label>
                 <label id="analyzeRuntimeField">
                   runtime
                   <input id="analyzeRuntimeInput" name="analyzeRuntime" type="number" min="1" step="1" placeholder="例: 95" />
                 </label>
+              </div>
+              <div class="script-db-confirm-panel hidden" id="scriptDbConfirmPanel">
+                <p class="script-db-confirm-label">脚本が見つかりました</p>
+                <p class="script-db-confirm-title" id="scriptDbConfirmTitleText"></p>
+                <div class="script-db-confirm-footer">
+                  <p class="script-db-confirm-question">解析を開始しますか？</p>
+                  <div class="script-db-confirm-actions">
+                    <button class="primary-button" type="button" id="scriptDbConfirmStartButton">開始</button>
+                    <button class="ghost-button" type="button" id="scriptDbConfirmCancelButton">キャンセル</button>
+                  </div>
+                </div>
               </div>
 
               <div class="logline-field-wrap" id="analyzeLoglineField">
@@ -393,31 +434,16 @@
               </div>
 
               <div class="analyze-mode-fields hidden" id="scriptAnalyzeFields">
-                <div class="script-mode-toggle" aria-label="Script source mode">
-                  <button class="filter-pill filter-pill-active" type="button" data-script-mode="script_db">脚本DB</button>
-                  <button class="filter-pill" type="button" data-script-mode="file_upload">Upload</button>
-                </div>
                 <label class="script-drop-zone" id="scriptDropZone">
                   <span>脚本ファイルをアップロード</span>
                   <strong id="scriptFileName">ファイルを選択、またはここにドラッグ&ドロップ</strong>
                   <small>.txt / .md / .fountain / .fdx / .rtf / .pdf / .docx / .pptx など</small>
                   <input id="analyzeScriptFileInput" type="file" accept=".txt,.md,.fountain,.fdx,.rtf,.pdf,.doc,.docx,.ppt,.pptx,text/plain,text/markdown,application/pdf,application/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
                 </label>
-                <p class="analyze-help">PDF / Word / PowerPoint は現状テキスト抽出未対応です（まずは .txt / .md などテキスト脚本で動作します）。</p>
+                <p class="analyze-help hidden" id="scriptUploadHelp">PDF / Word (.docx) / PowerPoint (.pptx) / テキスト (.txt / .md / .fountain など) に対応しています。</p>
                 <button class="primary-button analyze-extract-button analyze-script-upload-button" id="analyzeScriptUploadButton" type="button">ファイルを解析</button>
               </div>
 
-              <div class="analyze-mode-fields hidden" id="videoAnalyzeFields">
-                <label>
-                  動画URL
-                  <input id="analyzeVideoUrlInput" type="url" placeholder="YouTube / Vimeo / Google Drive URL" />
-                </label>
-                <label>
-                  動画ファイル
-                  <input id="analyzeVideoFileInput" type="file" accept="video/*" />
-                </label>
-                <p class="analyze-help">yt-dlp / Gemini動画解析は次の実装で接続します。現時点ではManualでの保存を使ってください。</p>
-              </div>
 
               <div class="analyze-form-actions" id="analyzeFormActions">
                 <button class="primary-button analyze-extract-button" id="extractAnalyzeButton" type="button">保存する</button>

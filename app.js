@@ -13,6 +13,9 @@ const sampleMovies = [
     cast: "Koji Yakusho",
     sourceUrl: "",
     posterUrl: "",
+    tmdbId: "",
+    runtime: "",
+    watchProviders: "",
     description: "東京・渋谷の公共トイレ清掃員の日々を描く、静かな余韻のあるドラマ。",
     note: "静かな日にゆっくり見たい。",
     status: "",
@@ -28,6 +31,9 @@ const sampleMovies = [
     cast: "Timothée Chalamet, Zendaya",
     sourceUrl: "",
     posterUrl: "",
+    tmdbId: "",
+    runtime: "",
+    watchProviders: "",
     description: "砂の惑星アラキスを舞台に、運命と復讐が交差する壮大なSF続編。",
     note: "大きいスクリーン向き。",
     status: "",
@@ -38,24 +44,63 @@ const sampleMovies = [
 let movies = loadMovies();
 let reverseBeats = loadReverseBeats();
 let editingId = null;
-let editingReverseBeatId = null;
-let selectedReferenceFileName = "";
 let pendingConfirmAction = null;
 let detailMovieId = null;
 let currentStatusFilter = "all";
 let formStatus = "";
+let analyzeSourceType = "manual";
+let scriptMode = "script_db";
+let editingAnalyzeId = null;
+let detailAnalyzeId = null;
+let currentAnalyzeFilter = "all";
+
+const analyzeBeatDefinitions = [
+  { id: "opening_image", label: "オープニング・イメージ", page: "1", ratio: 0.01, placeholder: "物語のトーンと変化前の主人公を示す" },
+  { id: "theme_stated", label: "テーマの提示", page: "5", ratio: 0.05, placeholder: "何についての話かセリフ等で語られる" },
+  { id: "setup", label: "セットアップ", page: "1-10", ratio: 0.1, placeholder: "登場人物紹介と欠けている人生を描く" },
+  { id: "catalyst", label: "きっかけ", page: "12", ratio: 0.12, placeholder: "日常を壊す大きな事件が起きる" },
+  { id: "debate", label: "悩み", page: "12-25", ratio: 0.2, placeholder: "新しい世界へ行くべきか葛藤する" },
+  { id: "break_into_two", label: "第1ターニングポイント", page: "25", ratio: 0.25, placeholder: "決断し、新しい世界へ旅立つ" },
+  { id: "b_story", label: "サブプロット（Bストーリー）", page: "30", ratio: 0.3, placeholder: "恋愛や相棒など別の軸が走り出す" },
+  { id: "fun_and_games", label: "お楽しみ（遊び）", page: "30-55", ratio: 0.4, placeholder: "その映画の「売り」となるシーンの連続" },
+  { id: "midpoint", label: "ミッドポイント", page: "55", ratio: 0.5, placeholder: "物語の転換点。時間制限やリスクの増大" },
+  { id: "bad_guys_close_in", label: "迫り来る悪", page: "55-75", ratio: 0.65, placeholder: "敵の反撃と内面・外面からの追い込み" },
+  { id: "all_is_lost", label: "すべてを失って", page: "75", ratio: 0.75, placeholder: "最も低いどん底。希望が完全に消える" },
+  { id: "dark_night_of_the_soul", label: "心の暗闇", page: "75-85", ratio: 0.8, placeholder: "敗北を噛み締め、教訓を得る" },
+  { id: "break_into_three", label: "第2ターニングポイント", page: "85", ratio: 0.85, placeholder: "解決策を思いつき、最終決戦へ向かう" },
+  { id: "finale", label: "フィナーレ", page: "85-110", ratio: 0.95, placeholder: "新しい自分に生まれ変わり、敵を倒す" },
+  { id: "final_image", label: "ファイナル・イメージ", page: "110", ratio: 1, placeholder: "変化した後の世界。1との対比" },
+];
 
 const form = document.querySelector("#movieForm");
 const openFormButton = document.querySelector("#openFormButton");
 const closeFormButton = document.querySelector("#closeFormButton");
 const formBackdrop = document.querySelector("#formBackdrop");
 const confirmBackdrop = document.querySelector("#confirmBackdrop");
+const candidateBackdrop = document.querySelector("#candidateBackdrop");
 const detailBackdrop = document.querySelector("#detailBackdrop");
+const analyzeBackdrop = document.querySelector("#analyzeBackdrop");
+const analyzeDetailBackdrop = document.querySelector("#analyzeDetailBackdrop");
 const confirmDialog = document.querySelector("#confirmDialog");
 const confirmTitle = document.querySelector("#confirmTitle");
 const confirmMessage = document.querySelector("#confirmMessage");
 const confirmCancelButton = document.querySelector("#confirmCancelButton");
 const confirmOkButton = document.querySelector("#confirmOkButton");
+const candidateDialog = document.querySelector("#candidateDialog");
+const candidateList = document.querySelector("#candidateList");
+const candidateCloseButton = document.querySelector("#candidateCloseButton");
+const analyzeDialog = document.querySelector("#analyzeDialog");
+const closeAnalyzeButton = document.querySelector("#closeAnalyzeButton");
+const analyzeDialogTitle = document.querySelector("#analyzeDialogTitle");
+const analyzeDialogSubtitle = document.querySelector("#analyzeDialogSubtitle");
+const analyzeDetailDialog = document.querySelector("#analyzeDetailDialog");
+const closeAnalyzeDetailButton = document.querySelector("#closeAnalyzeDetailButton");
+const analyzeDetailTitle = document.querySelector("#analyzeDetailTitle");
+const analyzeDetailMeta = document.querySelector("#analyzeDetailMeta");
+const analyzeDetailLogline = document.querySelector("#analyzeDetailLogline");
+const analyzeDetailBeats = document.querySelector("#analyzeDetailBeats");
+const analyzeDetailEditButton = document.querySelector("#analyzeDetailEditButton");
+const analyzeDetailDeleteButton = document.querySelector("#analyzeDetailDeleteButton");
 const movieDetailDialog = document.querySelector("#movieDetailDialog");
 const closeDetailButton = document.querySelector("#closeDetailButton");
 const detailTitle = document.querySelector("#detailTitle");
@@ -70,9 +115,11 @@ const detailEditButton = document.querySelector("#detailEditButton");
 const detailDeleteButton = document.querySelector("#detailDeleteButton");
 const formTitle = document.querySelector("#formTitle");
 const submitButton = document.querySelector("#submitButton");
-const cancelEditButton = document.querySelector("#cancelEditButton");
 const movieList = document.querySelector("#movieList");
 const emptyState = document.querySelector("#emptyState");
+const emptyStateActions = document.querySelector("#emptyStateActions");
+const clearMovieFiltersButton = document.querySelector("#clearMovieFiltersButton");
+const emptyAddMovieButton = document.querySelector("#emptyAddMovieButton");
 const allMovieCount = document.querySelector("#allMovieCount");
 const unwatchedMovieCount = document.querySelector("#unwatchedMovieCount");
 const watchedMovieCount = document.querySelector("#watchedMovieCount");
@@ -81,32 +128,51 @@ const searchInput = document.querySelector("#searchInput");
 const sortSelect = document.querySelector("#sortSelect");
 const statusFilterButtons = document.querySelectorAll("[data-status-filter]");
 const formStatusButtons = document.querySelectorAll("[data-form-status]");
-const detailStatusButtons = document.querySelectorAll("[data-detail-status]");
+const detailStatusToggle = document.querySelector("#detailStatusToggle");
+const detailStatusText = document.querySelector("#detailStatusText");
 const fetchInfoButton = document.querySelector("#fetchInfoButton");
 const fetchTitleInfoButton = document.querySelector("#fetchTitleInfoButton");
-const pageTitle = document.querySelector("#pageTitle");
-const pageSubtitle = document.querySelector("#pageSubtitle");
-const topActions = document.querySelector(".top-actions");
+const headerPanels = document.querySelectorAll("[data-header]");
 const reverseList = document.querySelector("#reverseList");
-const reverseCount = document.querySelector("#reverseCount");
-const reverseTemplate = document.querySelector("#reverseBeatTemplate");
 const reverseForm = document.querySelector("#reverseForm");
-const referenceFileNameDisplay = document.querySelector("#referenceFileName");
-const saveReverseBeatButton = document.querySelector("#saveReverseBeatButton");
-const cancelReverseEditButton = document.querySelector("#cancelReverseEditButton");
+const analyzeTitleField = document.querySelector("#analyzeTitleField");
+const analyzeTitleLabel = document.querySelector("#analyzeTitleLabel");
+const analyzeRuntimeField = document.querySelector("#analyzeRuntimeField");
+const analyzeRuntimeInput = document.querySelector("#analyzeRuntimeInput");
+const extractAnalyzeButton = document.querySelector("#extractAnalyzeButton");
+const deleteAnalyzeButton = document.querySelector("#deleteAnalyzeButton");
+const analyzeFormActions = document.querySelector("#analyzeFormActions");
+const analyzeStatus = document.querySelector("#analyzeStatus");
+const analyzeSourceButtons = document.querySelectorAll("[data-analyze-source]");
+const manualAnalyzeFields = document.querySelector("#manualAnalyzeFields");
+const scriptAnalyzeFields = document.querySelector("#scriptAnalyzeFields");
+const videoAnalyzeFields = document.querySelector("#videoAnalyzeFields");
+const manualBeatFields = document.querySelector("#manualBeatFields");
+const analyzeLoglineField = document.querySelector("#analyzeLoglineField");
+const analyzeLoglineInput = document.querySelector("#analyzeLoglineInput");
+const generateLoglineButton = document.querySelector("#generateLoglineButton");
+const analyzeScriptFileInput = document.querySelector("#analyzeScriptFileInput");
+const scriptDropZone = document.querySelector("#scriptDropZone");
+const scriptFileName = document.querySelector("#scriptFileName");
+const analyzeScriptDbButton = document.querySelector("#analyzeScriptDbButton");
+const analyzeScriptUploadButton = document.querySelector("#analyzeScriptUploadButton");
+const scriptModeButtons = document.querySelectorAll("[data-script-mode]");
+const analyzeVideoUrlInput = document.querySelector("#analyzeVideoUrlInput");
+const analyzeVideoFileInput = document.querySelector("#analyzeVideoFileInput");
+const analyzeSearchInput = document.querySelector("#analyzeSearchInput");
+const analyzeSortSelect = document.querySelector("#analyzeSortSelect");
+const analyzeFilterButtons = document.querySelectorAll("[data-analyze-filter]");
+const manualBeatTemplate = document.querySelector("#manualBeatTemplate");
+const analyzeCardTemplate = document.querySelector("#analyzeCardTemplate");
+const analyzeDetailBeatTemplate = document.querySelector("#analyzeDetailBeatTemplate");
+const analyzeCounts = {
+  all: document.querySelector("#allAnalyzeCount"),
+  manual: document.querySelector("#manualAnalyzeCount"),
+  script: document.querySelector("#scriptAnalyzeCount"),
+  video: document.querySelector("#videoAnalyzeCount"),
+};
 const tabButtons = document.querySelectorAll(".tab-button[data-tab]");
 const tabPanels = document.querySelectorAll(".tab-panel");
-
-const tabCopy = {
-  movies: {
-    title: "Watch",
-    subtitle: "心がときめく映画を一緒に見つけよう。",
-  },
-  reverse: {
-    title: "Box",
-    subtitle: "物語の構造をほどいて、次の創作に残しておこう。",
-  },
-};
 
 const inputs = {
   title: document.querySelector("#titleInput"),
@@ -117,16 +183,16 @@ const inputs = {
   cast: document.querySelector("#castInput"),
   sourceUrl: document.querySelector("#sourceUrlInput"),
   posterUrl: document.querySelector("#posterUrlInput"),
+  tmdbId: document.querySelector("#tmdbIdInput"),
+  runtime: document.querySelector("#runtimeInput"),
+  watchProviders: document.querySelector("#watchProvidersInput"),
   description: document.querySelector("#descriptionInput"),
   note: document.querySelector("#noteInput"),
 };
 
 const reverseInputs = {
-  referenceUrl: document.querySelector("#referenceUrlInput"),
-  referenceFile: document.querySelector("#referenceFileInput"),
   title: document.querySelector("#reverseTitleInput"),
-  beats: document.querySelector("#reverseBeatsInput"),
-  note: document.querySelector("#reverseNoteInput"),
+  runtime: analyzeRuntimeInput,
 };
 
 form.addEventListener("submit", (event) => {
@@ -140,9 +206,12 @@ form.addEventListener("submit", (event) => {
     movies = movies.map((movie) => (movie.id === editingId ? { ...movie, ...payload } : movie));
     stopEditing();
   } else {
-    movies.unshift({ id: crypto.randomUUID(), ...payload, createdAt: Date.now() });
+    saveMovie(payload);
     form.reset();
     inputs.posterUrl.value = "";
+    inputs.tmdbId.value = "";
+    inputs.runtime.value = "";
+    inputs.watchProviders.value = "";
     setFormStatus("");
   }
 
@@ -156,21 +225,39 @@ openFormButton.addEventListener("click", () => {
 });
 closeFormButton.addEventListener("click", closeForm);
 formBackdrop.addEventListener("click", closeForm);
-cancelEditButton.addEventListener("click", () => {
-  stopEditing();
-  closeForm();
-});
 searchInput.addEventListener("input", render);
 sortSelect.addEventListener("change", render);
 statusFilterButtons.forEach((button) => button.addEventListener("click", () => setStatusFilter(button.dataset.statusFilter)));
+clearMovieFiltersButton?.addEventListener("click", resetMovieFilters);
+emptyAddMovieButton?.addEventListener("click", () => {
+  openForm();
+});
 formStatusButtons.forEach((button) => button.addEventListener("click", () => setFormStatus(button.dataset.formStatus)));
-detailStatusButtons.forEach((button) => button.addEventListener("click", () => setDetailStatus(button.dataset.detailStatus)));
+detailStatusToggle.addEventListener("click", toggleDetailWatchedStatus);
 fetchInfoButton.addEventListener("click", fetchMovieInfo);
 fetchTitleInfoButton.addEventListener("click", fetchMovieInfoByTitle);
-saveReverseBeatButton.addEventListener("click", saveReverseBeat);
-cancelReverseEditButton.addEventListener("click", stopEditingReverseBeat);
-document.querySelector("#referenceFileInput").addEventListener("change", handleReferenceFileChange);
+extractAnalyzeButton.addEventListener("click", extractAnalyzeBeats);
+deleteAnalyzeButton.addEventListener("click", deleteCurrentAnalyze);
+generateLoglineButton.addEventListener("click", generateAnalyzeLogline);
+analyzeSourceButtons.forEach((button) => button.addEventListener("click", () => openAnalyzeSetup(button.dataset.analyzeSource)));
+closeAnalyzeButton.addEventListener("click", closeAnalyzeSetup);
+analyzeBackdrop.addEventListener("click", closeAnalyzeSetup);
+closeAnalyzeDetailButton.addEventListener("click", closeAnalyzeDetail);
+analyzeDetailBackdrop.addEventListener("click", closeAnalyzeDetail);
+analyzeDetailEditButton.addEventListener("click", () => openAnalyzeEdit(detailAnalyzeId));
+analyzeDetailDeleteButton.addEventListener("click", () => deleteAnalyzeById(detailAnalyzeId));
+analyzeSearchInput.addEventListener("input", renderAnalyzeBeats);
+analyzeSortSelect.addEventListener("change", renderAnalyzeBeats);
+analyzeFilterButtons.forEach((button) => button.addEventListener("click", () => setAnalyzeFilter(button.dataset.analyzeFilter)));
+analyzeScriptFileInput.addEventListener("change", updateScriptFileName);
+scriptDropZone.addEventListener("dragover", handleScriptDragOver);
+scriptDropZone.addEventListener("dragleave", handleScriptDragLeave);
+scriptDropZone.addEventListener("drop", handleScriptDrop);
+analyzeScriptDbButton?.addEventListener("click", () => runScriptDbAnalyze());
+analyzeScriptUploadButton?.addEventListener("click", () => runScriptUploadAnalyze());
+scriptModeButtons.forEach((button) => button.addEventListener("click", () => setScriptMode(button.dataset.scriptMode)));
 tabButtons.forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
+renderManualBeatFields();
 
 function loadMovies() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -194,6 +281,9 @@ function normalizeMovie(movie) {
     cast: movie.cast || "",
     sourceUrl: movie.sourceUrl || "",
     posterUrl: movie.posterUrl || "",
+    tmdbId: normalizeTmdbId(movie.tmdbId || movie.tmdb_id),
+    runtime: normalizeRuntime(movie.runtime),
+    watchProviders: normalizeWatchProviders(movie.watchProviders || movie.watch_providers),
     description: movie.description || "",
     note: movie.note || "",
     status: normalizeMovieStatus(movie.status),
@@ -203,6 +293,40 @@ function normalizeMovie(movie) {
 
 function normalizeMovieStatus(status) {
   return status === "watched" ? "watched" : "";
+}
+
+function normalizeTmdbId(value) {
+  return String(value || "").trim();
+}
+
+function normalizeRuntime(value) {
+  const runtime = Number.parseInt(value, 10);
+  return Number.isFinite(runtime) && runtime > 0 ? String(runtime) : "";
+}
+
+function normalizeWatchProviders(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean).join(", ");
+  if (value && typeof value === "object") return Object.values(value).flat().map((item) => String(item || "").trim()).filter(Boolean).join(", ");
+  return String(value || "").trim();
+}
+
+function saveMovie(payload) {
+  const normalizedPayload = {
+    ...payload,
+    tmdbId: normalizeTmdbId(payload.tmdbId),
+    runtime: normalizeRuntime(payload.runtime),
+    watchProviders: normalizeWatchProviders(payload.watchProviders),
+  };
+  const existingIndex = normalizedPayload.tmdbId
+    ? movies.findIndex((movie) => normalizeTmdbId(movie.tmdbId) === normalizedPayload.tmdbId)
+    : -1;
+  if (existingIndex >= 0) {
+    const existing = movies[existingIndex];
+    const updated = { ...existing, ...normalizedPayload, id: existing.id, createdAt: existing.createdAt, updatedAt: Date.now() };
+    movies = [updated, ...movies.filter((_, index) => index !== existingIndex)];
+    return;
+  }
+  movies.unshift({ id: crypto.randomUUID(), ...normalizedPayload, createdAt: Date.now() });
 }
 
 function saveAndRender() {
@@ -222,16 +346,65 @@ function loadReverseBeats() {
 }
 
 function normalizeReverseBeat(item) {
+  const runtime = normalizeRuntime(item.runtime);
+  const sourceType = item.sourceType || item.source_type || "manual";
   return {
     id: item.id || crypto.randomUUID(),
+    sourceType,
     referenceUrl: item.referenceUrl || "",
     referenceFileName: item.referenceFileName || "",
     title: item.title || "無題",
-    beats: item.beats || "",
+    runtime,
+    beats: normalizeStoredAnalyzeBeats(item.beats, runtime),
+    logline: item.logline || "",
+    sourceMeta: normalizeAnalyzeSourceMeta(item.sourceMeta, { sourceType, scriptSource: item.scriptSource, referenceUrl: item.referenceUrl, referenceFileName: item.referenceFileName }),
     note: item.note || "",
     createdAt: item.createdAt || Date.now(),
     updatedAt: item.updatedAt || "",
   };
+}
+
+function normalizeAnalyzeSourceMeta(sourceMeta = {}, fallback = {}) {
+  const sourceType = fallback.sourceType || "manual";
+  return {
+    method: sourceMeta.method || fallback.method || getDefaultAnalyzeMethod(sourceType, fallback),
+    sourceUrl: sourceMeta.sourceUrl || fallback.scriptSource || fallback.referenceUrl || "",
+    fileName: sourceMeta.fileName || fallback.referenceFileName || "",
+    model: sourceMeta.model || "",
+  };
+}
+
+function getDefaultAnalyzeMethod(sourceType, fallback = {}) {
+  if (sourceType === "manual") return "manual";
+  if (sourceType === "script") return fallback.referenceFileName ? "file_upload" : fallback.scriptSource ? "script_db" : "script";
+  if (sourceType === "video") return "video";
+  return sourceType;
+}
+
+function normalizeStoredAnalyzeBeats(beats, runtime) {
+  if (!Array.isArray(beats)) return beats || "";
+  const theoryById = Object.fromEntries(buildClientTheoryBeats(runtime).map((beat) => [beat.id, beat.theory]));
+  return beats.map((beat) => ({
+    ...beat,
+    theory: theoryById[beat.id] || beat.theory || {},
+  }));
+}
+
+function buildClientTheoryBeats(runtime) {
+  const runtimeMinutes = Number.parseInt(runtime, 10);
+  const totalSeconds = Number.isFinite(runtimeMinutes) && runtimeMinutes > 0 ? runtimeMinutes * 60 : null;
+  return analyzeBeatDefinitions.map((beat) => {
+    const targetSeconds = totalSeconds === null ? null : Math.round(totalSeconds * beat.ratio);
+    return {
+      id: beat.id,
+      theory: {
+        ratio: beat.ratio,
+        targetPercent: Math.round(beat.ratio * 10000) / 100,
+        targetSeconds,
+        targetTime: formatBeatTimestamp(targetSeconds),
+      },
+    };
+  });
 }
 
 function saveReverseBeats() {
@@ -240,24 +413,39 @@ function saveReverseBeats() {
 }
 
 function switchTab(tabName) {
-  const copy = tabCopy[tabName] || tabCopy.movies;
-  pageTitle.textContent = copy.title;
-  pageSubtitle.textContent = copy.subtitle;
-  topActions.classList.toggle("hidden", tabName !== "movies");
+  const nextTab = [...tabPanels].some((panel) => panel.dataset.tab === tabName) ? tabName : "movies";
+  headerPanels.forEach((panel) => toggleAnimatedPanel(panel, panel.dataset.header === nextTab));
   tabButtons.forEach((button) => {
-    const selected = button.dataset.tab === tabName;
+    const selected = button.dataset.tab === nextTab;
     button.classList.toggle("tab-active", selected);
     button.setAttribute("aria-selected", selected ? "true" : "false");
   });
-  tabPanels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.tab !== tabName));
-  localStorage.setItem(STORAGE_TAB_KEY, tabName);
-  if (tabName === "reverse") renderReverseBeats();
+  tabPanels.forEach((panel) => toggleAnimatedPanel(panel, panel.dataset.tab === nextTab));
+  localStorage.setItem(STORAGE_TAB_KEY, nextTab);
+  if (nextTab === "reverse") renderReverseBeats();
+}
+
+function toggleAnimatedPanel(panel, shouldShow) {
+  panel.classList.remove("panel-entering");
+  panel.classList.toggle("hidden", !shouldShow);
+  if (!shouldShow) return;
+  requestAnimationFrame(() => panel.classList.add("panel-entering"));
+}
+
+function setAnalyzeFilter(filter) {
+  currentAnalyzeFilter = ["all", "manual", "script", "video"].includes(filter) ? filter : "all";
+  analyzeFilterButtons.forEach((button) => {
+    const selected = button.dataset.analyzeFilter === currentAnalyzeFilter;
+    button.classList.toggle("filter-pill-active", selected);
+  });
+  renderAnalyzeBeats();
 }
 
 function render() {
   const visibleMovies = getVisibleMovies();
   movieList.innerHTML = "";
   emptyState.classList.toggle("hidden", visibleMovies.length > 0);
+  emptyStateActions?.classList.toggle("hidden", visibleMovies.length > 0);
   updateMovieStatusCounts();
 
   visibleMovies.forEach((movie) => {
@@ -266,7 +454,11 @@ function render() {
     const posterImage = poster.querySelector("img");
     const posterFallback = poster.querySelector("span");
     const heading = item.querySelector("h3");
+    const cardMeta = item.querySelector(".movie-card-meta");
+    const statusBadge = item.querySelector(".movie-status-badge");
     const statusButton = item.querySelector(".status-button");
+    const menuButton = item.querySelector(".movie-menu-button");
+    const menu = item.querySelector(".movie-card-menu");
 
     item.tabIndex = 0;
     item.classList.toggle("movie-watched", movie.status === "watched");
@@ -274,8 +466,16 @@ function render() {
     item.setAttribute("aria-label", `${movie.title} の詳細を開く`);
     setPoster(poster, posterImage, posterFallback, movie);
     renderSplitTitle(heading, movie.title, "movie-card-title");
+    const releaseYear = normalizeDateInput(movie.releaseDate).split("-")[0] || "";
+    const runtimeLabel = movie.runtime ? `${movie.runtime}分` : "";
+    cardMeta.textContent = [releaseYear, runtimeLabel].filter(Boolean).join(" ・ ") || "公開年・上映時間 未設定";
+    statusBadge.classList.toggle("hidden", movie.status !== "watched");
     renderStatusButton(statusButton, movie);
     statusButton.addEventListener("click", (event) => toggleWatchedStatus(event, movie));
+    menuButton.addEventListener("click", (event) => toggleMovieMenu(event, menuButton, menu));
+    menu.querySelectorAll("[data-menu-action]").forEach((button) => {
+      button.addEventListener("click", (event) => handleMovieMenuAction(event, movie));
+    });
     item.addEventListener("click", () => openMovieDetail(movie.id));
     item.addEventListener("keydown", (event) => {
       if (event.target !== item) return;
@@ -298,7 +498,7 @@ function getVisibleMovies() {
   const query = searchInput.value.trim().toLowerCase();
   return movies
     .filter((movie) => {
-      const haystack = [movie.title, movie.director, movie.cast, movie.genre, movie.releaseDate, movie.releaseEndDate, movie.sourceUrl, movie.description, movie.note]
+      const haystack = [movie.title, movie.director, movie.cast, movie.genre, movie.releaseDate, movie.releaseEndDate, movie.runtime, movie.watchProviders, movie.sourceUrl, movie.description, movie.note]
         .join(" ")
         .toLowerCase();
       const matchesQuery = !query || haystack.includes(query);
@@ -319,12 +519,26 @@ function setStatusFilter(filter) {
   render();
 }
 
+function resetMovieFilters() {
+  currentStatusFilter = "all";
+  searchInput.value = "";
+  sortSelect.value = "createdDesc";
+  statusFilterButtons.forEach((button) => {
+    button.classList.toggle("filter-pill-active", button.dataset.statusFilter === "all");
+  });
+  render();
+}
+
 function renderStatusButton(button, movie) {
   const watched = movie.status === "watched";
   button.className = `status-button ${watched ? "status-watched" : "status-unwatched"}`;
   button.title = watched ? "未視聴に戻す" : "視聴済みにする";
   button.setAttribute("aria-label", button.title);
-  button.textContent = watched ? "視聴済み" : "未視聴";
+  button.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m5.2 12.4 4.2 4.1 9.4-10" />
+    </svg>
+  `;
 }
 
 function setFormStatus(status) {
@@ -343,14 +557,42 @@ function setDetailStatus(status) {
 
 function renderDetailStatus(status) {
   const normalized = normalizeMovieStatus(status);
-  detailStatusButtons.forEach((button) => {
-    button.classList.toggle("status-choice-active", button.dataset.detailStatus === normalized);
-  });
+  renderStatusButton(detailStatusToggle, { status: normalized });
+  detailStatusText.textContent = normalized === "watched" ? "視聴済み" : "未視聴";
+}
+
+function toggleDetailWatchedStatus() {
+  if (!detailMovieId) return;
+  const movie = movies.find((item) => item.id === detailMovieId);
+  if (!movie) return;
+  setDetailStatus(movie.status === "watched" ? "" : "watched");
 }
 
 function toggleWatchedStatus(event, movie) {
   event.stopPropagation();
   updateMovieStatus(movie.id, movie.status === "watched" ? "" : "watched");
+}
+
+function toggleMovieMenu(event, button, menu) {
+  event.stopPropagation();
+  const willOpen = menu.classList.contains("hidden");
+  closeMovieMenus();
+  menu.classList.toggle("hidden", !willOpen);
+  button.setAttribute("aria-expanded", willOpen ? "true" : "false");
+}
+
+function closeMovieMenus() {
+  document.querySelectorAll(".movie-card-menu").forEach((menu) => menu.classList.add("hidden"));
+  document.querySelectorAll(".movie-menu-button").forEach((button) => button.setAttribute("aria-expanded", "false"));
+}
+
+function handleMovieMenuAction(event, movie) {
+  event.stopPropagation();
+  closeMovieMenus();
+  const action = event.currentTarget.dataset.menuAction;
+  if (action === "watched") return updateMovieStatus(movie.id, "watched");
+  if (action === "unwatched") return updateMovieStatus(movie.id, "");
+  if (action === "delete") return deleteMovie(movie.id);
 }
 
 function updateMovieStatus(id, status) {
@@ -387,7 +629,6 @@ function startEditing(id) {
   setFormStatus(movie.status);
   formTitle.textContent = "映画を編集";
   submitButton.textContent = "更新する";
-  cancelEditButton.classList.remove("hidden");
   openForm();
 }
 
@@ -395,10 +636,12 @@ function stopEditing() {
   editingId = null;
   form.reset();
   inputs.posterUrl.value = "";
+  inputs.tmdbId.value = "";
+  inputs.runtime.value = "";
+  inputs.watchProviders.value = "";
   setFormStatus("");
   formTitle.textContent = "映画を追加";
   submitButton.textContent = "追加する";
-  cancelEditButton.classList.add("hidden");
 }
 
 function openForm() {
@@ -475,6 +718,9 @@ function renderDetailFields(movie) {
     ["監督", movie.director],
     ["キャスト", movie.cast],
     ["ジャンル", movie.genre],
+    ["上映時間", movie.runtime ? `${movie.runtime}分` : ""],
+    ["配信", movie.watchProviders],
+    ["TMDb ID", movie.tmdbId],
     ["作品ページ", movie.sourceUrl],
   ].forEach(([label, value]) => detailFields.append(createDetailField(label, value)));
 }
@@ -555,6 +801,10 @@ function closeConfirmDialog() {
 
 confirmCancelButton.addEventListener("click", closeConfirmDialog);
 confirmBackdrop.addEventListener("click", closeConfirmDialog);
+document.addEventListener("click", closeMovieMenus);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeMovieMenus();
+});
 confirmOkButton.addEventListener("click", () => {
   const action = pendingConfirmAction;
   closeConfirmDialog();
@@ -593,6 +843,10 @@ async function fetchAndApply(url, button, defaultLabel, loadingLabel) {
     const response = await fetch(url);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "映画情報を取得できませんでした。");
+    if (Array.isArray(data.candidates)) {
+      openCandidateDialog(data.candidates);
+      return;
+    }
     applyFetchedInfo(data);
   } catch (error) {
     alert(buildFetchErrorMessage(error));
@@ -601,6 +855,45 @@ async function fetchAndApply(url, button, defaultLabel, loadingLabel) {
     button.textContent = defaultLabel;
   }
 }
+
+function openCandidateDialog(candidates) {
+  candidateList.innerHTML = "";
+  candidates.forEach((candidate) => {
+    const button = document.createElement("button");
+    button.className = "candidate-item";
+    button.type = "button";
+    const meta = [candidate.originalTitle, candidate.releaseDate || candidate.year, candidate.language, `TMDb ${candidate.tmdbId}`].filter(Boolean).join(" ・ ");
+    const description = candidate.overview || "概要未登録。ポスター、公開日、原題、TMDb IDで確認してください。";
+    button.innerHTML = `
+      <span class="candidate-poster">${candidate.posterUrl ? `<img src="${escapeAttribute(candidate.posterUrl)}" alt="" />` : "NO IMAGE"}</span>
+      <span class="candidate-body">
+        <strong>${escapeHtml(candidate.title || "無題")}</strong>
+        <small>${escapeHtml(meta || "詳細情報なし")}</small>
+        <span class="${candidate.overview ? "" : "candidate-empty-overview"}">${escapeHtml(description)}</span>
+      </span>
+    `;
+    button.addEventListener("click", () => selectMovieCandidate(candidate.tmdbId));
+    candidateList.append(button);
+  });
+  candidateDialog.classList.remove("hidden");
+  candidateBackdrop.classList.remove("hidden");
+  document.body.classList.add("dialog-open");
+  candidateCloseButton.focus();
+}
+
+function closeCandidateDialog() {
+  candidateDialog.classList.add("hidden");
+  candidateBackdrop.classList.add("hidden");
+  document.body.classList.remove("dialog-open");
+}
+
+async function selectMovieCandidate(tmdbId) {
+  closeCandidateDialog();
+  await fetchAndApply(`/api/search?tmdbId=${encodeURIComponent(tmdbId)}`, fetchTitleInfoButton, "タイトルから取得", "取得中");
+}
+
+candidateCloseButton.addEventListener("click", closeCandidateDialog);
+candidateBackdrop.addEventListener("click", closeCandidateDialog);
 
 function buildFetchErrorMessage(error) {
   const message = error.message || "情報を取得できませんでした。";
@@ -618,6 +911,9 @@ function applyFetchedInfo(data) {
   setFetchedInput(inputs.description, data.description);
   setFetchedInput(inputs.posterUrl, data.posterUrl, { allowEmpty: true });
   setFetchedInput(inputs.sourceUrl, data.sourceUrl);
+  setFetchedInput(inputs.tmdbId, data.tmdbId, { allowEmpty: true });
+  setFetchedInput(inputs.runtime, data.runtime, { allowEmpty: true });
+  setFetchedInput(inputs.watchProviders, data.watchProviders, { allowEmpty: true });
 }
 
 function setFetchedInput(input, value, options = {}) {
@@ -625,81 +921,591 @@ function setFetchedInput(input, value, options = {}) {
   input.value = String(value || "").trim();
 }
 
-function handleReferenceFileChange(event) {
-  const file = event.target.files?.[0];
-  selectedReferenceFileName = file ? file.name : "";
-  referenceFileNameDisplay.textContent = selectedReferenceFileName;
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-function saveReverseBeat() {
-  const url = reverseInputs.referenceUrl.value.trim();
-  const title = reverseInputs.title.value.trim();
-  const beats = reverseInputs.beats.value.trim();
-  const note = reverseInputs.note.value.trim();
-  if (!title || !beats || (!url && !selectedReferenceFileName)) {
-    alert("対象映画タイトル、参照URLまたはファイル、15ビートの逆箱を入力してください。");
-    return;
-  }
-
-  const payload = { referenceUrl: url, referenceFileName: selectedReferenceFileName, title, beats, note };
-  if (editingReverseBeatId) {
-    reverseBeats = reverseBeats.map((item) => (item.id === editingReverseBeatId ? { ...item, ...payload, updatedAt: Date.now() } : item));
-    saveReverseBeats();
-    stopEditingReverseBeat();
-    return;
-  }
-
-  reverseBeats.unshift({ id: crypto.randomUUID(), ...payload, createdAt: Date.now(), updatedAt: "" });
-  saveReverseBeats();
-  resetReverseForm();
-}
-
-function startEditingReverseBeat(id) {
-  const item = reverseBeats.find((entry) => entry.id === id);
-  if (!item) return;
-  editingReverseBeatId = id;
-  reverseInputs.referenceUrl.value = item.referenceUrl || "";
-  reverseInputs.title.value = item.title || "";
-  reverseInputs.beats.value = item.beats || "";
-  reverseInputs.note.value = item.note || "";
-  selectedReferenceFileName = item.referenceFileName || "";
-  referenceFileNameDisplay.textContent = selectedReferenceFileName;
-  saveReverseBeatButton.textContent = "更新する";
-  cancelReverseEditButton.classList.remove("hidden");
-  reverseInputs.title.focus();
-}
-
-function stopEditingReverseBeat() {
-  editingReverseBeatId = null;
-  resetReverseForm();
-  saveReverseBeatButton.textContent = "保存する";
-  cancelReverseEditButton.classList.add("hidden");
-}
-
-function resetReverseForm() {
-  reverseForm.reset();
-  selectedReferenceFileName = "";
-  referenceFileNameDisplay.textContent = "";
+function escapeAttribute(value) {
+  return escapeHtml(value);
 }
 
 function renderReverseBeats() {
-  reverseList.innerHTML = "";
-  reverseCount.textContent = reverseBeats.length;
-  document.querySelector("#reverseEmptyState").classList.toggle("hidden", reverseBeats.length > 0);
-  reverseBeats.forEach((item) => {
-    const card = reverseTemplate.content.firstElementChild.cloneNode(true);
-    card.querySelector("h3").textContent = item.title;
-    card.querySelector(".beat-meta").textContent = item.referenceFileName || item.referenceUrl || "参照なし";
-    card.querySelector(".reverse-beats").textContent = item.beats;
-    card.querySelector(".reverse-note").textContent = item.note || "メモなし";
-    card.querySelector(".edit-button").addEventListener("click", () => startEditingReverseBeat(item.id));
-    card.querySelector(".delete-button").addEventListener("click", () => {
-      reverseBeats = reverseBeats.filter((entry) => entry.id !== item.id);
-      if (editingReverseBeatId === item.id) stopEditingReverseBeat();
+  renderAnalyzeBeats();
+}
+
+function openAnalyzeSetup(sourceType) {
+  analyzeSourceType = ["manual", "script", "video"].includes(sourceType) ? sourceType : "manual";
+  scriptMode = "script_db";
+  editingAnalyzeId = null;
+  reverseForm.reset();
+  updateScriptFileName();
+  clearManualBeatFields();
+  renderManualBeatFields();
+  manualAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "manual");
+  scriptAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "script");
+  videoAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "video");
+  updateAnalyzeFormMode();
+  const copy = {
+    manual: ["Manual", "映画を観ながら15ビートを自分で埋めていく修行モード。"],
+    script: ["Script", "脚本DB、または脚本ファイルからAIが15ビートを抽出します。"],
+    video: ["Video", "動画ファイルまたはURLから映像・音声を解析するモード。"],
+  };
+  updateManualBeatGuides();
+  analyzeDialogTitle.textContent = copy[analyzeSourceType][0];
+  analyzeDialogSubtitle.textContent = copy[analyzeSourceType][1];
+  extractAnalyzeButton.textContent = analyzeSourceType === "manual" ? "保存する" : "次の実装で接続";
+  extractAnalyzeButton.disabled = analyzeSourceType !== "manual";
+  deleteAnalyzeButton.classList.add("hidden");
+  setAnalyzeStatus("", false);
+  analyzeBackdrop.classList.remove("hidden");
+  analyzeDialog.classList.remove("hidden");
+  reverseInputs.title.focus();
+}
+
+function updateAnalyzeFormMode() {
+  const isManual = analyzeSourceType === "manual";
+  const isScript = analyzeSourceType === "script";
+  analyzeTitleField.classList.toggle("hidden", isScript && scriptMode === "file_upload");
+  analyzeRuntimeField.classList.toggle("hidden", !isManual);
+  analyzeLoglineField.classList.toggle("hidden", !isManual);
+  generateLoglineButton.classList.toggle("hidden", !isManual);
+  analyzeTitleLabel.textContent = isScript ? "タイトル" : "映画タイトル";
+  reverseInputs.title.placeholder = isScript ? "例: 花束みたいな恋をした" : "例: TALK TO ME";
+  analyzeScriptDbButton?.classList.toggle("hidden", !isScript || scriptMode !== "script_db");
+  scriptModeButtons.forEach((button) => {
+    button.classList.toggle("filter-pill-active", button.dataset.scriptMode === scriptMode);
+  });
+  scriptDropZone?.classList.toggle("hidden", !isScript || scriptMode !== "file_upload");
+  analyzeScriptUploadButton?.classList.toggle("hidden", !isScript || scriptMode !== "file_upload");
+  analyzeFormActions?.classList.toggle("hidden", !isManual);
+}
+
+function setScriptMode(mode) {
+  scriptMode = mode === "file_upload" ? "file_upload" : "script_db";
+  updateAnalyzeFormMode();
+  setAnalyzeStatus("", false);
+  if (scriptMode === "file_upload") {
+    analyzeScriptFileInput?.focus?.();
+  } else {
+    reverseInputs.title.focus();
+  }
+}
+
+async function runScriptDbAnalyze() {
+  analyzeSourceType = "script";
+  scriptMode = "script_db";
+  updateAnalyzeFormMode();
+  await extractAnalyzeBeats({ scriptMode: "script_db" });
+}
+
+async function runScriptUploadAnalyze() {
+  analyzeSourceType = "script";
+  scriptMode = "file_upload";
+  updateAnalyzeFormMode();
+  await extractAnalyzeBeats({ scriptMode: "file_upload" });
+}
+
+function closeAnalyzeSetup() {
+  analyzeBackdrop.classList.add("hidden");
+  analyzeDialog.classList.add("hidden");
+}
+
+function clearManualBeatFields() {
+  manualBeatFields.querySelectorAll("[data-manual-beat]").forEach((input) => {
+    input.value = "";
+  });
+  manualBeatFields.querySelectorAll("[data-manual-time]").forEach((picker) => {
+    picker.dataset.touched = "";
+    setTimePickerSeconds(picker, 0);
+  });
+}
+
+function renderManualBeatFields() {
+  if (!manualBeatFields || manualBeatFields.children.length) return;
+  analyzeBeatDefinitions.forEach((beat, index) => {
+    const field = manualBeatTemplate.content.firstElementChild.cloneNode(true);
+    field.querySelector(".manual-beat-head span").textContent = `${String(index + 1).padStart(2, "0")} ${beat.label}`;
+    field.querySelector(".manual-beat-head small").dataset.manualGuide = beat.id;
+    field.querySelector(".manual-beat-head small").textContent = getManualBeatGuide(beat);
+    field.querySelector("[data-manual-drift]").dataset.manualDrift = beat.id;
+    const picker = field.querySelector(".time-picker");
+    picker.dataset.manualTime = beat.id;
+    const [hourSelect, minuteSelect, secondSelect] = picker.querySelectorAll("select");
+    hourSelect.setAttribute("aria-label", `${beat.label} 時`);
+    minuteSelect.setAttribute("aria-label", `${beat.label} 分`);
+    secondSelect.setAttribute("aria-label", `${beat.label} 秒`);
+    hourSelect.innerHTML = buildTimeOptions(0, 5);
+    minuteSelect.innerHTML = buildTimeOptions(0, 59);
+    secondSelect.innerHTML = buildTimeOptions(0, 59);
+    const textarea = field.querySelector("textarea");
+    textarea.dataset.manualBeat = beat.id;
+    textarea.placeholder = beat.placeholder;
+    manualBeatFields.append(field);
+  });
+  manualBeatFields.querySelectorAll(".time-picker select").forEach((select) => {
+    select.addEventListener("change", () => {
+      select.closest(".time-picker").dataset.touched = "true";
+      updateManualBeatDrifts();
+    });
+  });
+  reverseInputs.runtime.oninput = () => {
+    updateManualBeatGuides();
+    updateManualBeatDrifts();
+  };
+  updateManualBeatDrifts();
+}
+
+function getManualBeatGuide(beat) {
+  const runtime = Number.parseInt(reverseInputs.runtime.value, 10);
+  const timeGuide = Number.isFinite(runtime) && runtime > 0 ? formatBeatTimestamp(runtime * 60 * beat.ratio) : "--:--";
+  return `目安 ${timeGuide} / p.${beat.page}`;
+}
+
+function updateManualBeatGuides() {
+  analyzeBeatDefinitions.forEach((beat) => {
+    const guide = manualBeatFields.querySelector(`[data-manual-guide="${beat.id}"]`);
+    if (guide) guide.textContent = getManualBeatGuide(beat);
+    const picker = manualBeatFields.querySelector(`[data-manual-time="${beat.id}"]`);
+    if (picker && picker.dataset.touched !== "true") {
+      setTimePickerSeconds(picker, getManualBeatGuideSeconds(beat));
+    }
+  });
+  updateManualBeatDrifts();
+}
+
+function getManualBeatGuideSeconds(beat) {
+  const runtime = Number.parseInt(reverseInputs.runtime.value, 10);
+  return Number.isFinite(runtime) && runtime > 0 ? Math.round(runtime * 60 * beat.ratio) : 0;
+}
+
+function updateManualBeatDrifts() {
+  analyzeBeatDefinitions.forEach((beat) => {
+    const drift = manualBeatFields.querySelector(`[data-manual-drift="${beat.id}"]`);
+    const picker = manualBeatFields.querySelector(`[data-manual-time="${beat.id}"]`);
+    if (!drift || !picker) return;
+    const actualSeconds = getTimePickerSeconds(picker);
+    const theorySeconds = getManualBeatGuideSeconds(beat);
+    const diffSeconds = actualSeconds - theorySeconds;
+    drift.textContent = `差分 ${formatDrift(diffSeconds)}`;
+    drift.classList.remove("beat-drift-neutral", "beat-drift-early", "beat-drift-late");
+    drift.classList.add(getDriftClass(diffSeconds));
+  });
+}
+
+function setTimePickerSeconds(picker, seconds) {
+  const value = Math.max(0, Math.round(seconds));
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const rest = value % 60;
+  const [hourSelect, minuteSelect, secondSelect] = picker.querySelectorAll("select");
+  hourSelect.value = String(Math.min(hours, 5));
+  minuteSelect.value = String(minutes);
+  secondSelect.value = String(rest);
+}
+
+function getTimePickerSeconds(picker) {
+  const [hours, minutes, seconds] = [...picker.querySelectorAll("select")].map((select) => Number(select.value) || 0);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function buildTimeOptions(min, max) {
+  return Array.from({ length: max - min + 1 }, (_, index) => {
+    const value = min + index;
+    const label = String(value).padStart(2, "0");
+    return `<option value="${value}">${label}</option>`;
+  }).join("");
+}
+
+async function extractAnalyzeBeats(options = {}) {
+  const title = reverseInputs.title.value.trim();
+  const runtime = reverseInputs.runtime.value.trim();
+  const effectiveScriptMode = options.scriptMode || scriptMode;
+  if (analyzeSourceType === "video") {
+    setAnalyzeStatus("Video解析は次の実装で接続します。", true);
+    return;
+  }
+  if (analyzeSourceType === "manual" && (!title || !runtime)) {
+    setAnalyzeStatus("映画タイトルとruntimeを入力してください。", true);
+    return;
+  }
+  if (analyzeSourceType === "script" && effectiveScriptMode === "script_db" && !title) {
+    setAnalyzeStatus("タイトルを入力してください。", true);
+    return;
+  }
+  if (analyzeSourceType === "script" && effectiveScriptMode === "file_upload" && !analyzeScriptFileInput.files?.[0]) {
+    setAnalyzeStatus("脚本ファイルを指定してください。", true);
+    return;
+  }
+
+  extractAnalyzeButton.disabled = true;
+  analyzeScriptDbButton?.setAttribute("disabled", "true");
+  analyzeScriptUploadButton?.setAttribute("disabled", "true");
+  setAnalyzeStatus(analyzeSourceType === "script" ? "脚本を解析しています。" : "理論値を生成しています。", false);
+  try {
+    const requestBody = { title, runtime, source_type: analyzeSourceType };
+    let sourceMeta = { method: "manual", sourceUrl: "", fileName: "", model: "" };
+    if (analyzeSourceType === "script") {
+      const scriptFile = analyzeScriptFileInput.files?.[0];
+      if (effectiveScriptMode === "file_upload") {
+        const uploaded = await uploadScriptFile(scriptFile);
+        requestBody.sourceText = uploaded.text;
+        requestBody.title = uploaded.title || requestBody.title || "";
+        sourceMeta = { method: "file_upload", sourceUrl: "", fileName: scriptFile?.name || "", model: "" };
+      } else {
+        sourceMeta = { method: "script_db", sourceUrl: "", fileName: "", model: "" };
+      }
+    }
+    const response = await fetch("/api/analyze/start", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "開始に失敗しました。");
+    const beats = analyzeSourceType === "manual" ? buildManualAnalyzeBeats(data.beats || []) : normalizeAnalyzeBeats(data.beats || []);
+    const payload = {
+      sourceType: analyzeSourceType,
+      title: data.title || requestBody.title || title || "無題",
+      runtime: data.runtimeMinutes || runtime || "",
+      beats,
+      logline: analyzeLoglineInput.value.trim() || data.logline || "",
+      sourceMeta: normalizeAnalyzeSourceMeta(data.sourceMeta, { sourceType: analyzeSourceType, ...sourceMeta }),
+    };
+    if (editingAnalyzeId) {
+      reverseBeats = reverseBeats.map((item) => item.id === editingAnalyzeId ? { ...item, ...payload, updatedAt: Date.now() } : item);
+    } else {
+      reverseBeats.unshift({ id: crypto.randomUUID(), ...payload, createdAt: Date.now(), updatedAt: "" });
+    }
+    saveReverseBeats();
+    closeAnalyzeSetup();
+    renderAnalyzeBeats();
+  } catch (error) {
+    setAnalyzeStatus(error.message || "保存に失敗しました。", true);
+  } finally {
+    extractAnalyzeButton.disabled = false;
+    analyzeScriptDbButton?.removeAttribute("disabled");
+    analyzeScriptUploadButton?.removeAttribute("disabled");
+  }
+}
+
+function getManualBeatNotes() {
+  return Object.fromEntries([...manualBeatFields.querySelectorAll("[data-manual-beat]")]
+    .map((input) => [input.dataset.manualBeat, input.value.trim()]));
+}
+
+function buildManualAnalyzeBeats(beats) {
+  const manualNotes = getManualBeatNotes();
+  const manualTimes = getManualBeatTimes();
+  return normalizeAnalyzeBeats(beats).map((beat) => ({
+    ...beat,
+    actual: {
+      ...beat.actual,
+      startSeconds: manualTimes[beat.id],
+      startTime: formatBeatTimestamp(manualTimes[beat.id]),
+      summary: manualNotes[beat.id] || "",
+    },
+  }));
+}
+
+function getManualBeatTimes() {
+  return Object.fromEntries([...manualBeatFields.querySelectorAll("[data-manual-time]")]
+    .map((picker) => {
+      const [hours, minutes, seconds] = [...picker.querySelectorAll("select")].map((select) => Number(select.value) || 0);
+      return [picker.dataset.manualTime, hours * 3600 + minutes * 60 + seconds];
+    }));
+}
+
+async function uploadScriptFile(file) {
+  if (!file) throw new Error("脚本ファイルを指定してください。");
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("title", reverseInputs.title.value.trim());
+  const response = await fetch("/api/analyze/upload", { method: "POST", body: formData });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "脚本ファイルのアップロードに失敗しました。");
+  const text = String(data.text || "");
+  if (!text.trim()) throw new Error("脚本からテキストを抽出できませんでした。テキスト脚本（.txt/.md）またはテキストPDF/DOCX/PPTXを試してください。");
+  return { text, title: String(data.title || "") };
+}
+
+function updateScriptFileName() {
+  const file = analyzeScriptFileInput.files?.[0];
+  if (scriptFileName) scriptFileName.textContent = file ? file.name : "ファイルを選択、またはここにドラッグ&ドロップ";
+}
+
+function handleScriptDragOver(event) {
+  event.preventDefault();
+  scriptDropZone.classList.add("drag-over");
+}
+
+function handleScriptDragLeave() {
+  scriptDropZone.classList.remove("drag-over");
+}
+
+function handleScriptDrop(event) {
+  event.preventDefault();
+  scriptDropZone.classList.remove("drag-over");
+  const file = event.dataTransfer.files?.[0];
+  if (!file) return;
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  analyzeScriptFileInput.files = transfer.files;
+  updateScriptFileName();
+}
+
+async function generateAnalyzeLogline() {
+  const title = reverseInputs.title.value.trim();
+  const notes = getManualBeatNotes();
+  const beats = analyzeBeatDefinitions.map((beat) => ({
+    id: beat.id,
+    label: beat.label,
+    summary: notes[beat.id] || "",
+  })).filter((beat) => beat.summary);
+  if (!beats.length) {
+    setAnalyzeStatus("ログライン生成には、先に15ビートの内容メモを入力してください。", true);
+    return;
+  }
+  generateLoglineButton.disabled = true;
+  setAnalyzeStatus("ログラインを生成しています。", false);
+  try {
+    const response = await fetch("/api/analyze/logline", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title, beats }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "ログライン生成に失敗しました。");
+    analyzeLoglineInput.value = data.logline || "";
+    setAnalyzeStatus("ログラインを反映しました。", false);
+  } catch (error) {
+    setAnalyzeStatus(error.message || "ログライン生成に失敗しました。", true);
+  } finally {
+    generateLoglineButton.disabled = false;
+  }
+}
+
+function deleteCurrentAnalyze() {
+  deleteAnalyzeById(editingAnalyzeId);
+}
+
+function deleteAnalyzeById(id) {
+  const item = reverseBeats.find((entry) => entry.id === id);
+  if (!item) return;
+  openConfirmDialog({
+    title: "Analyzeデータを削除しますか？",
+    message: `「${item.title}」のAnalyzeデータを削除します。この操作は元に戻せません。`,
+    okText: "削除する",
+    onConfirm: () => {
+      reverseBeats = reverseBeats.filter((entry) => entry.id !== id);
+      editingAnalyzeId = null;
+      detailAnalyzeId = null;
       saveReverseBeats();
+      closeAnalyzeSetup();
+      closeAnalyzeDetail();
+    },
+  });
+}
+
+function normalizeAnalyzeBeats(beats) {
+  return beats.map((beat) => {
+    const theory = beat.theory || {};
+    const actual = beat.actual || {};
+    const targetSeconds = Number.isFinite(theory.targetSeconds) ? theory.targetSeconds : 0;
+    const actualSeconds = Number.isFinite(actual.startSeconds) ? actual.startSeconds : targetSeconds;
+    return {
+      id: beat.id || crypto.randomUUID(),
+      name: beat.name || "",
+      label: beat.label || beat.name || "",
+      theory,
+      actual: {
+        ...actual,
+        startSeconds: actualSeconds,
+        startTime: formatBeatTimestamp(actualSeconds),
+        summary: actual.summary || "",
+      },
+    };
+  });
+}
+
+function renderAnalyzeBeats() {
+  reverseList.innerHTML = "";
+  const visibleItems = getVisibleAnalyzeItems();
+  updateAnalyzeCounts();
+  document.querySelector("#reverseEmptyState").classList.toggle("hidden", visibleItems.length > 0);
+  visibleItems.forEach((item) => {
+    const card = analyzeCardTemplate.content.firstElementChild.cloneNode(true);
+    const beats = Array.isArray(item.beats) ? item.beats : [];
+    card.querySelector(".analyze-beat-index").textContent = getAnalyzeSourceLabel(item.sourceType);
+    card.querySelector("h3").textContent = item.title;
+    card.querySelector(".analyze-card-meta").textContent = `${item.runtime ? `${item.runtime}分` : "runtime未登録"} · ${beats.length || 0} beats`;
+    card.querySelector(".analyze-summary").textContent = item.logline || "ログライン未登録";
+    card.querySelector(".analyze-card-footer span").textContent = formatAnalyzeCreatedAt(item.createdAt);
+    card.setAttribute("aria-label", `${item.title} のAnalyze詳細を開く`);
+    card.addEventListener("click", () => openAnalyzeDetail(item.id));
+    card.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      openAnalyzeDetail(item.id);
     });
     reverseList.append(card);
   });
+}
+
+function getVisibleAnalyzeItems() {
+  const query = analyzeSearchInput.value.trim().toLowerCase();
+  return reverseBeats
+    .filter((item) => currentAnalyzeFilter === "all" || (item.sourceType || "manual") === currentAnalyzeFilter)
+    .filter((item) => {
+      if (!query) return true;
+      const haystack = [
+        item.title,
+        item.runtime,
+        item.logline,
+        item.sourceType,
+        ...(Array.isArray(item.beats) ? item.beats.map((beat) => `${beat.label || ""} ${beat.actual?.summary || ""}`) : []),
+      ].join(" ").toLowerCase();
+      return haystack.includes(query);
+    })
+    .sort((a, b) => {
+      if (analyzeSortSelect.value === "titleAsc") return String(a.title || "").localeCompare(String(b.title || ""), "ja");
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+}
+
+function updateAnalyzeCounts() {
+  const counts = {
+    all: reverseBeats.length,
+    manual: reverseBeats.filter((item) => (item.sourceType || "manual") === "manual").length,
+    script: reverseBeats.filter((item) => item.sourceType === "script").length,
+    video: reverseBeats.filter((item) => item.sourceType === "video").length,
+  };
+  Object.entries(counts).forEach(([key, value]) => {
+    if (analyzeCounts[key]) analyzeCounts[key].textContent = value;
+  });
+}
+
+function openAnalyzeEdit(id) {
+  const item = reverseBeats.find((entry) => entry.id === id);
+  if (!item) return;
+  closeAnalyzeDetail();
+  editingAnalyzeId = id;
+  analyzeSourceType = item.sourceType || "manual";
+  reverseForm.reset();
+  clearManualBeatFields();
+  manualAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "manual");
+  scriptAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "script");
+  videoAnalyzeFields.classList.toggle("hidden", analyzeSourceType !== "video");
+  updateAnalyzeFormMode();
+  reverseInputs.title.value = item.title || "";
+  reverseInputs.runtime.value = item.runtime || "";
+  analyzeLoglineInput.value = item.logline || "";
+  populateManualBeatFields(Array.isArray(item.beats) ? item.beats : []);
+  updateManualBeatGuides();
+  analyzeDialogTitle.textContent = getAnalyzeSourceLabel(analyzeSourceType);
+  analyzeDialogSubtitle.textContent = "保存済みのAnalyzeデータを編集します。";
+  extractAnalyzeButton.textContent = analyzeSourceType === "script" ? "Scriptを再解析" : "保存する";
+  extractAnalyzeButton.disabled = analyzeSourceType === "video";
+  deleteAnalyzeButton.classList.remove("hidden");
+  setAnalyzeStatus("", false);
+  analyzeBackdrop.classList.remove("hidden");
+  analyzeDialog.classList.remove("hidden");
+}
+
+function openAnalyzeDetail(id) {
+  const item = reverseBeats.find((entry) => entry.id === id);
+  if (!item) return;
+  detailAnalyzeId = id;
+  const beats = Array.isArray(item.beats) ? normalizeAnalyzeBeats(item.beats) : [];
+  analyzeDetailTitle.textContent = item.title || "無題";
+  analyzeDetailMeta.textContent = [getAnalyzeSourceLabel(item.sourceType), item.runtime ? `${item.runtime}分` : "", `${beats.length} beats`].filter(Boolean).join(" ・ ");
+  analyzeDetailLogline.textContent = item.logline || "ログライン未登録";
+  analyzeDetailBeats.innerHTML = "";
+  beats.forEach((beat, index) => {
+    const row = analyzeDetailBeatTemplate.content.firstElementChild.cloneNode(true);
+    const actualSeconds = Number.isFinite(beat.actual.startSeconds) ? beat.actual.startSeconds : 0;
+    const theorySeconds = Number.isFinite(beat.theory.targetSeconds) ? beat.theory.targetSeconds : 0;
+    const diffSeconds = actualSeconds - theorySeconds;
+    row.querySelector("span").textContent = String(index + 1).padStart(2, "0");
+    row.querySelector("strong").textContent = beat.label;
+    row.querySelector("small").textContent = `実測 ${formatBeatTimestamp(actualSeconds)} / 理論 ${formatBeatTimestamp(theorySeconds)} / 差分 ${formatDrift(diffSeconds)}`;
+    row.classList.add(getDriftClass(diffSeconds));
+    row.querySelector("p").textContent = beat.actual.summary || "未入力";
+    analyzeDetailBeats.append(row);
+  });
+  analyzeDetailBackdrop.classList.remove("hidden");
+  analyzeDetailDialog.classList.remove("hidden");
+  analyzeDetailDialog.classList.remove("detail-entering");
+  requestAnimationFrame(() => analyzeDetailDialog.classList.add("detail-entering"));
+  document.body.classList.add("dialog-open");
+}
+
+function closeAnalyzeDetail() {
+  analyzeDetailBackdrop.classList.add("hidden");
+  analyzeDetailDialog.classList.add("hidden");
+  analyzeDetailDialog.classList.remove("detail-entering");
+  document.body.classList.remove("dialog-open");
+}
+
+function populateManualBeatFields(beats) {
+  const normalized = normalizeAnalyzeBeats(beats);
+  normalized.forEach((beat) => {
+    const textarea = manualBeatFields.querySelector(`[data-manual-beat="${beat.id}"]`);
+    if (textarea) textarea.value = beat.actual.summary || "";
+    const picker = manualBeatFields.querySelector(`[data-manual-time="${beat.id}"]`);
+    if (picker) {
+      picker.dataset.touched = "true";
+      setTimePickerSeconds(picker, beat.actual.startSeconds || 0);
+    }
+  });
+}
+
+function getAnalyzeSourceLabel(sourceType) {
+  const labels = { manual: "Manual", script: "Script", video: "Video" };
+  return labels[sourceType] || "Manual";
+}
+
+function formatAnalyzeCreatedAt(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+function formatBeatTimestamp(seconds) {
+  if (!Number.isFinite(Number(seconds))) return "--:--:--";
+  const value = Math.max(0, Math.round(Number(seconds)));
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const rest = value % 60;
+  const two = (number) => String(number).padStart(2, "0");
+  return `${two(hours)}:${two(minutes)}:${two(rest)}`;
+}
+
+function formatDrift(seconds) {
+  const value = Math.round(Number(seconds) || 0);
+  if (Math.abs(value) < 1) return "±0秒";
+  const sign = value > 0 ? "+" : "-";
+  const absolute = Math.abs(value);
+  const minutes = Math.floor(absolute / 60);
+  const rest = absolute % 60;
+  if (minutes > 0 && rest > 0) return `${sign}${minutes}分${rest}秒`;
+  if (minutes > 0) return `${sign}${minutes}分`;
+  return `${sign}${rest}秒`;
+}
+
+function getDriftClass(seconds) {
+  const value = Math.round(Number(seconds) || 0);
+  if (Math.abs(value) < 30) return "beat-drift-neutral";
+  return value < 0 ? "beat-drift-early" : "beat-drift-late";
+}
+
+function setAnalyzeStatus(message, isError) {
+  analyzeStatus.textContent = message;
+  analyzeStatus.classList.toggle("status-error", Boolean(isError));
 }
 
 function formatDisplayDate(value) {

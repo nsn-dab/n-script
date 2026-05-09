@@ -1,64 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Movie Shelf logo</title>
-  <desc id="desc">An animated red monogram with cinematic shelf lines.</desc>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_レイヤー_2" data-name="レイヤー 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 453.15 422.13">
   <defs>
-    <linearGradient id="redGlow" x1="74" y1="66" x2="438" y2="446" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ff3340"/>
-      <stop offset=".48" stop-color="#e50914"/>
-      <stop offset="1" stop-color="#8d050b"/>
-    </linearGradient>
-    <linearGradient id="shine" x1="-120" y1="0" x2="120" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
-      <stop offset=".48" stop-color="#fff" stop-opacity=".75"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-      <animateTransform attributeName="gradientTransform" type="translate" from="-220 0" to="700 0" dur="3.2s" repeatCount="indefinite"/>
-    </linearGradient>
-    <filter id="softRed" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.9  0 0 0 0 0.02  0 0 0 0 0.04  0 0 0 .7 0"/>
-    </filter>
     <style>
-      .mark {
-        transform-origin: 256px 256px;
-        animation: breathe 4.2s ease-in-out infinite;
+      .cls-1 {
+        fill: #ef181f;
       }
-      .draw {
-        stroke-dasharray: 760;
-        stroke-dashoffset: 760;
-        animation: draw 1.25s ease-out .15s forwards;
-      }
-      .shelf {
-        transform-origin: 256px 256px;
-        animation: shelfPulse 2.8s ease-in-out infinite;
-      }
-      .shelf.two { animation-delay: .18s; }
-      .shelf.three { animation-delay: .36s; }
-      @keyframes breathe {
-        0%, 100% { transform: scale(1); filter: drop-shadow(0 18px 38px rgba(229, 9, 20, .28)); }
-        50% { transform: scale(1.018); filter: drop-shadow(0 24px 54px rgba(229, 9, 20, .42)); }
-      }
-      @keyframes draw { to { stroke-dashoffset: 0; } }
-      @keyframes shelfPulse {
-        0%, 100% { opacity: .92; transform: translateX(0); }
-        50% { opacity: 1; transform: translateX(8px); }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .mark, .draw, .shelf { animation: none; }
+
+      .cls-2 {
+        fill: #fdfdfd;
       }
     </style>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#09090b"/>
-  <path d="M106 256c0-83 67-150 150-150s150 67 150 150-67 150-150 150-150-67-150-150Z" fill="#e50914" opacity=".22" filter="url(#softRed)">
-    <animate attributeName="opacity" values=".16;.3;.16" dur="4.2s" repeatCount="indefinite"/>
-  </path>
-  <g class="mark">
-    <path d="M104 388V124h78l74 146 74-146h78v264h-68V232l-62 122h-44l-62-122v156h-68Z" fill="url(#redGlow)"/>
-    <path class="draw" d="M104 388V124h78l74 146 74-146h78v264" fill="none" stroke="#ff5963" stroke-width="10" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>
-    <path d="M104 124h304v264H104z" fill="url(#shine)" opacity=".38"/>
-  </g>
-  <g fill="none" stroke="#f5f5f6" stroke-linecap="round" stroke-width="18">
-    <path class="shelf one" d="M154 178h72"/>
-    <path class="shelf two" d="M154 256h55"/>
-    <path class="shelf three" d="M154 334h72"/>
+  <g id="_レイヤー_1-2" data-name="レイヤー 1">
+    <g>
+      <path class="cls-2" d="M61,98v271.5c-1.57,2.74-3.95,5.19-6.5,7.5-12.78,11.59-26.18,23.49-39,35-2.07,1.86-8.62,9.66-11,9l-4.5-4.5V5.5L2,1l2.5-1h50c5.05,5.27,10.5,10.19,15.5,15.5,76.2,80.89,152.52,164.55,228,246l63,68c-.19,1.23.29,2.95,0,4-.34,1.25-2.79,1.41-3.5,2.5h-73c-4.07-2.63-7.94-6.73-11.5-10.5-63.41-67.08-125.66-136.89-189-205-5.8-6.24-14.04-16.04-20-21-1.02-.84-1.29-1.91-3-1.5Z"/>
+      <path class="cls-1" d="M405.5,345c3.1-.45,12.9-.45,16,0,.37.05.61.92,1,1,.93.18,2.19-.23,3,0,2.99.85,10.31,4.91,13,7,3.72,2.89,9.84,11.38,11.5,15.5,1.5,3.73,1.43,7.24,2,11,.06.38.95.63,1,1,.2,1.57.2,4.43,0,6-.05.37-.93.62-1,1-.22,1.22.24,2.82,0,4-.08.38-.9.6-1,1-3.75,14.61-12.79,23.86-27.5,27.5-.4.1-.62.93-1,1-1.8.32-4.14-.27-6,0-.37.05-.6.91-1,1-2.48.58-3.6-.94-4-1-2.16-.32-4.92.37-7,0-.38-.07-.6-.9-1-1-6.34-1.57-10.97-4.19-16-8-2.5-1.89-8.22-10.29-9.5-13.5s-1.44-6.86-2-10c-.07-.38-.95-.63-1-1-.84-6.81,1.02-15.38,4-21,2.7-7.27,9.23-12.82,15.5-16.5,1.58-.93,5.68-3.64,7-4,.83-.23,2.09.2,3,0,.39-.09.63-.95,1-1Z"/>
+    </g>
   </g>
 </svg>

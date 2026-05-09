@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#09090b" />
-    <title>NReel</title>
-    <link rel="icon" type="image/png" href="nreel-icon.png" />
-    <link rel="apple-touch-icon" href="nreel-icon.png" />
+    <title>N's Writers Room</title>
+    <link rel="icon" type="image/png" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -14,8 +14,8 @@
     <main class="app-shell">
       <aside class="sidebar" aria-label="NReel navigation">
         <div class="brand-lockup sidebar-brand">
-          <img class="nreel-logo-full" src="nreel-logo-full.png" alt="NReel" />
-          <img class="nreel-logo-icon" src="nreel-icon.png" alt="NReel" />
+          <img class="nreel-logo-full" src="logo.svg" alt="NReel" />
+          <img class="nreel-logo-icon" src="logo.svg" alt="NReel" />
         </div>
 
         <nav class="tab-row side-nav" role="tablist" aria-label="NReel tabs">
@@ -23,7 +23,7 @@
             <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 4.75h10a1.75 1.75 0 0 1 1.75 1.75v13.2l-6.75-3.9-6.75 3.9V6.5A1.75 1.75 0 0 1 7 4.75Z" />
             </svg>
-            Watch
+            <span class="side-nav-label">Discover</span>
           </button>
           <button class="tab-button side-nav-button" type="button" data-tab="reverse" role="tab" aria-selected="false">
             <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -31,26 +31,56 @@
               <path d="m5.1 8.05 6.9 4 6.9-4" />
               <path d="M12 12.05v7.85" />
             </svg>
-            Box
+            <span class="side-nav-label">Analyze</span>
+          </button>
+          <button class="tab-button side-nav-button" type="button" data-tab="mentor" role="tab" aria-selected="false">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 4.75h14v10.5H8.7L5 18.7V4.75Z" />
+              <path d="M8.75 8.5h6.5" />
+              <path d="M8.75 11.4h4.25" />
+            </svg>
+            <span class="side-nav-label">Mentor</span>
           </button>
         </nav>
       </aside>
 
       <div class="main-column">
         <header class="topbar">
-          <div>
-            <h1 id="pageTitle">Watch</h1>
-            <p class="page-subtitle" id="pageSubtitle">心がときめく映画を一緒に見つけよう。</p>
+          <div class="topbar-panel" data-header="movies">
+            <div>
+              <h1>Discover</h1>
+              <p class="page-subtitle">心がときめく映画を一緒に見つけよう。</p>
+            </div>
+            <div class="top-actions">
+              <button class="primary-button list-add-button" id="openFormButton" type="button"><span aria-hidden="true">＋</span> Add Movie</button>
+            </div>
           </div>
-          <div class="top-actions">
-            <button class="primary-button list-add-button" id="openFormButton" type="button"><span aria-hidden="true">＋</span> Add Movie</button>
+          <div class="topbar-panel hidden" data-header="reverse">
+            <div>
+              <h1>Analyze</h1>
+              <p class="page-subtitle">映画を15ビートに分解し、理論タイムとの差を見える化しよう。</p>
+            </div>
+            <div class="top-actions analyze-top-actions" aria-label="Analyze source type">
+              <button class="primary-button analyze-route-button" type="button" data-analyze-source="manual"><span aria-hidden="true">＋</span> Manual</button>
+              <button class="primary-button analyze-route-button" type="button" data-analyze-source="script"><span aria-hidden="true">＋</span> Script</button>
+              <button class="primary-button analyze-route-button" type="button" data-analyze-source="video"><span aria-hidden="true">＋</span> Video</button>
+            </div>
+          </div>
+          <div class="topbar-panel hidden" data-header="mentor">
+            <div>
+              <h1>Mentor</h1>
+              <p class="page-subtitle">脚本を商品として査定し、次の書き直しへつなげよう。</p>
+            </div>
           </div>
         </header>
 
         <section class="workspace">
           <div class="form-backdrop hidden" id="formBackdrop"></div>
           <div class="dialog-backdrop hidden" id="confirmBackdrop"></div>
+          <div class="dialog-backdrop hidden" id="candidateBackdrop"></div>
           <div class="dialog-backdrop hidden" id="detailBackdrop"></div>
+          <div class="dialog-backdrop hidden" id="analyzeBackdrop"></div>
+          <div class="dialog-backdrop hidden" id="analyzeDetailBackdrop"></div>
 
           <section class="confirm-dialog hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
             <div>
@@ -62,6 +92,19 @@
               <button class="ghost-button" id="confirmCancelButton" type="button">キャンセル</button>
               <button class="primary-button danger-confirm-button" id="confirmOkButton" type="button">削除する</button>
             </div>
+          </section>
+
+          <section class="candidate-dialog hidden" id="candidateDialog" role="dialog" aria-modal="true" aria-labelledby="candidateTitle">
+            <div class="candidate-heading">
+              <div>
+                <p class="eyebrow">Select Movie</p>
+                <h2 id="candidateTitle">候補を選択</h2>
+              </div>
+              <button class="icon-button close-button" id="candidateCloseButton" type="button" title="閉じる" aria-label="閉じる">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+            <div class="candidate-list" id="candidateList"></div>
           </section>
 
           <section class="detail-dialog hidden" id="movieDetailDialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
@@ -78,13 +121,12 @@
               </div>
               <div class="detail-main">
                 <div class="detail-title-block">
-                  <p class="eyebrow">Movie Detail</p>
                   <h2 id="detailTitle"></h2>
                   <p class="detail-meta" id="detailMeta"></p>
                 </div>
-                <div class="status-choice-group" aria-label="視聴状態">
-                  <button class="status-choice-button" type="button" data-detail-status="">未視聴</button>
-                  <button class="status-choice-button" type="button" data-detail-status="watched">視聴済み</button>
+                <div class="detail-status-row">
+                  <button class="status-button" id="detailStatusToggle" type="button" aria-label="視聴状態を切り替え"></button>
+                  <span id="detailStatusText">未視聴</span>
                 </div>
                 <section class="detail-section">
                   <h3>概要</h3>
@@ -109,7 +151,6 @@
             <div class="form-heading">
               <h2 id="formTitle">映画を追加</h2>
               <div class="form-heading-actions">
-                <button class="ghost-button hidden" id="cancelEditButton" type="button">編集をやめる</button>
                 <button class="icon-button close-button" id="closeFormButton" type="button" title="閉じる" aria-label="閉じる">
                   <span aria-hidden="true">×</span>
                 </button>
@@ -162,6 +203,22 @@
               <input id="genreInput" name="genre" type="text" placeholder="自動取得、または手入力" />
             </label>
 
+            <div class="field-grid">
+              <label>
+                上映時間
+                <input id="runtimeInput" name="runtime" type="number" min="1" step="1" placeholder="例: 124" />
+              </label>
+              <label>
+                TMDb ID
+                <input id="tmdbIdInput" name="tmdbId" type="text" placeholder="自動取得" />
+              </label>
+            </div>
+
+            <label>
+              配信
+              <input id="watchProvidersInput" name="watchProviders" type="text" placeholder="Netflix, U-NEXT など" />
+            </label>
+
             <label>
               主演・キャスト
               <input id="castInput" name="cast" type="text" placeholder="自動取得、または手入力" />
@@ -197,7 +254,6 @@
                   <input id="searchInput" type="search" placeholder="映画を検索…" />
                 </label>
                 <label class="sort-box">
-                  <span>並び順</span>
                   <svg class="sort-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M7 4v14" />
                     <path d="m4 15 3 3 3-3" />
@@ -205,7 +261,7 @@
                     <path d="M14 12h4" />
                     <path d="M14 18h2" />
                   </svg>
-                  <select id="sortSelect">
+                  <select id="sortSelect" aria-label="映画の並び順">
                     <option value="createdDesc">追加順</option>
                     <option value="titleAsc">タイトル順</option>
                   </select>
@@ -215,58 +271,160 @@
 
             <div class="movie-list" id="movieList" aria-live="polite"></div>
             <p class="empty-state hidden" id="emptyState">条件に合う映画がありません。</p>
+            <div class="empty-actions hidden" id="emptyStateActions">
+              <button class="ghost-button" id="clearMovieFiltersButton" type="button">フィルタを解除</button>
+              <button class="primary-button" id="emptyAddMovieButton" type="button">Add Movie</button>
+            </div>
           </section>
 
-          <section class="list-panel tab-panel hidden" id="reversePanel" data-tab="reverse" aria-label="15ビート逆箱">
-            <div class="tool-row">
-              <div>
-                <h2>15ビート逆箱</h2>
-                <p class="meta-line">動画URL / 動画ファイル名と対象映画・逆箱を保存できます。</p>
+          <section class="list-panel tab-panel hidden" id="reversePanel" data-tab="reverse" aria-label="Analyze">
+            <div class="tool-row movie-filter-row analyze-filter-row">
+              <div class="filter-pills" aria-label="Analyze filters">
+                <button class="filter-pill filter-pill-active" type="button" data-analyze-filter="all">すべて <span id="allAnalyzeCount">0</span></button>
+                <button class="filter-pill" type="button" data-analyze-filter="manual">Manual <span id="manualAnalyzeCount">0</span></button>
+                <button class="filter-pill" type="button" data-analyze-filter="script">Script <span id="scriptAnalyzeCount">0</span></button>
+                <button class="filter-pill" type="button" data-analyze-filter="video">Video <span id="videoAnalyzeCount">0</span></button>
               </div>
-              <div class="reverse-summary">
-                <span id="reverseCount">0</span>
-                <small>保存済み</small>
+              <div class="filter-tools">
+                <label class="search-box">
+                  <span>検索</span>
+                  <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="10.7" cy="10.7" r="6.2" />
+                    <path d="m15.25 15.25 4.25 4.25" />
+                  </svg>
+                  <input id="analyzeSearchInput" type="search" placeholder="Analyzeを検索…" />
+                </label>
+                <label class="sort-box">
+                  <svg class="sort-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 4v14" />
+                    <path d="m4 15 3 3 3-3" />
+                    <path d="M14 6h6" />
+                    <path d="M14 12h4" />
+                    <path d="M14 18h2" />
+                  </svg>
+                  <select id="analyzeSortSelect" aria-label="Analyzeの並び順">
+                    <option value="createdDesc">追加順</option>
+                    <option value="titleAsc">タイトル順</option>
+                  </select>
+                </label>
               </div>
             </div>
+            <div class="reverse-list analyze-beat-list" id="reverseList" aria-live="polite"></div>
+            <p class="empty-state hidden" id="reverseEmptyState">Analyzeデータがありません。上のルートから開始してください。</p>
+          </section>
 
-            <form class="reverse-form" id="reverseForm">
+          <section class="list-panel tab-panel hidden" id="mentorPanel" data-tab="mentor" aria-label="Mentor">
+            <div class="mentor-placeholder">
+              <div>
+                <span class="mentor-kicker">Coming Soon</span>
+                <h2>Mentor</h2>
+                <p>脚本査定、判定レポート、ピッチ練習のための箱です。中身は次のステップで組み込みます。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="detail-dialog analyze-detail-dialog hidden" id="analyzeDetailDialog" role="dialog" aria-modal="true" aria-labelledby="analyzeDetailTitle">
+            <div class="detail-heading">
+              <button class="detail-back-button" id="closeAnalyzeDetailButton" type="button">
+                <span aria-hidden="true">←</span>
+                戻る
+              </button>
+            </div>
+            <div class="detail-content analyze-detail-content">
+              <div class="detail-main">
+                <div class="detail-title-block">
+                  <h2 id="analyzeDetailTitle"></h2>
+                  <p class="detail-meta" id="analyzeDetailMeta"></p>
+                </div>
+                <section class="detail-section">
+                  <h3>ログライン</h3>
+                  <p id="analyzeDetailLogline"></p>
+                </section>
+                <section class="detail-section">
+                  <h3>15ビート</h3>
+                  <div class="analyze-detail-beats" id="analyzeDetailBeats"></div>
+                </section>
+                <div class="detail-footer-actions">
+                  <div class="detail-actions">
+                    <button class="primary-button" id="analyzeDetailEditButton" type="button">編集する</button>
+                    <button class="ghost-button danger-button" id="analyzeDetailDeleteButton" type="button">削除する</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="analyze-dialog hidden" id="analyzeDialog" role="dialog" aria-modal="true" aria-labelledby="analyzeDialogTitle">
+            <div class="candidate-heading">
+              <div>
+                <h2 id="analyzeDialogTitle">Manual</h2>
+                <p class="meta-line" id="analyzeDialogSubtitle">手動で理論値から開始</p>
+              </div>
+              <button class="icon-button close-button" id="closeAnalyzeButton" type="button" title="閉じる" aria-label="閉じる">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+
+            <form class="reverse-form analyze-form" id="reverseForm">
               <div class="field-grid">
-                <label>
-                  参照動画URL
-                  <input id="referenceUrlInput" name="referenceUrl" type="url" placeholder="https://..." />
-                </label>
-                <label>
-                  参照動画ファイル
-                  <div class="file-picker">
-                    <input id="referenceFileInput" name="referenceFile" type="file" accept="video/*" />
-                    <div class="file-name" id="referenceFileName"></div>
+                <label id="analyzeTitleField">
+                  <span id="analyzeTitleLabel">映画タイトル</span>
+                  <div class="fetchable-input-row analyze-title-row">
+                    <input id="reverseTitleInput" name="reverseTitle" type="text" placeholder="例: TALK TO ME" />
+                    <button class="primary-button fetch-button analyze-script-db-button hidden" id="analyzeScriptDbButton" type="button">脚本DBから解析</button>
                   </div>
                 </label>
+                <label id="analyzeRuntimeField">
+                  runtime
+                  <input id="analyzeRuntimeInput" name="analyzeRuntime" type="number" min="1" step="1" placeholder="例: 95" />
+                </label>
               </div>
 
-              <label>
-                対象映画タイトル
-                <input id="reverseTitleInput" name="reverseTitle" type="text" placeholder="例: きっと、うまくいく" required />
-              </label>
-
-              <label>
-                15ビートの逆箱
-                <textarea id="reverseBeatsInput" name="reverseBeats" rows="5" placeholder="15ビートの逆箱をここに入力します。" required></textarea>
-              </label>
-
-              <label>
-                備考
-                <textarea id="reverseNoteInput" name="reverseNote" rows="3" placeholder="参考メモや英語のポイントなど"></textarea>
-              </label>
-
-              <div class="reverse-form-actions">
-                <button class="primary-button" id="saveReverseBeatButton" type="button">保存する</button>
-                <button class="ghost-button hidden" id="cancelReverseEditButton" type="button">編集をやめる</button>
+              <div class="logline-field-wrap" id="analyzeLoglineField">
+                <div class="logline-field-header">
+                  <span class="logline-label" id="analyzeLoglineLabelText">ログライン</span>
+                  <button class="ghost-button logline-generate-button" id="generateLoglineButton" type="button">AI生成</button>
+                </div>
+                <textarea id="analyzeLoglineInput" rows="3" placeholder="１～２行でストーリーの核心を説明する"></textarea>
               </div>
+
+              <div class="analyze-mode-fields" id="manualAnalyzeFields">
+                <div class="analyze-beat-inputs" id="manualBeatFields"></div>
+              </div>
+
+              <div class="analyze-mode-fields hidden" id="scriptAnalyzeFields">
+                <div class="script-mode-toggle" aria-label="Script source mode">
+                  <button class="filter-pill filter-pill-active" type="button" data-script-mode="script_db">脚本DB</button>
+                  <button class="filter-pill" type="button" data-script-mode="file_upload">Upload</button>
+                </div>
+                <label class="script-drop-zone" id="scriptDropZone">
+                  <span>脚本ファイルをアップロード</span>
+                  <strong id="scriptFileName">ファイルを選択、またはここにドラッグ&ドロップ</strong>
+                  <small>.txt / .md / .fountain / .fdx / .rtf / .pdf / .docx / .pptx など</small>
+                  <input id="analyzeScriptFileInput" type="file" accept=".txt,.md,.fountain,.fdx,.rtf,.pdf,.doc,.docx,.ppt,.pptx,text/plain,text/markdown,application/pdf,application/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+                </label>
+                <p class="analyze-help">PDF / Word / PowerPoint は現状テキスト抽出未対応です（まずは .txt / .md などテキスト脚本で動作します）。</p>
+                <button class="primary-button analyze-extract-button analyze-script-upload-button" id="analyzeScriptUploadButton" type="button">ファイルを解析</button>
+              </div>
+
+              <div class="analyze-mode-fields hidden" id="videoAnalyzeFields">
+                <label>
+                  動画URL
+                  <input id="analyzeVideoUrlInput" type="url" placeholder="YouTube / Vimeo / Google Drive URL" />
+                </label>
+                <label>
+                  動画ファイル
+                  <input id="analyzeVideoFileInput" type="file" accept="video/*" />
+                </label>
+                <p class="analyze-help">yt-dlp / Gemini動画解析は次の実装で接続します。現時点ではManualでの保存を使ってください。</p>
+              </div>
+
+              <div class="analyze-form-actions" id="analyzeFormActions">
+                <button class="primary-button analyze-extract-button" id="extractAnalyzeButton" type="button">保存する</button>
+                <button class="ghost-button danger-button hidden" id="deleteAnalyzeButton" type="button">削除する</button>
+              </div>
+              <p class="analyze-status" id="analyzeStatus" aria-live="polite"></p>
             </form>
-
-            <div class="reverse-list" id="reverseList" aria-live="polite"></div>
-            <p class="empty-state hidden" id="reverseEmptyState">逆箱がありません。上のフォームで追加してください。</p>
           </section>
         </section>
       </div>
@@ -282,28 +440,61 @@
           <div class="title-row">
             <h3></h3>
           </div>
+          <p class="movie-card-meta"></p>
+          <span class="movie-status-badge hidden">視聴済み</span>
         </div>
         <div class="movie-card-controls">
           <button class="status-button" type="button" aria-label="視聴状態を切り替え"></button>
+          <button class="movie-menu-button" type="button" aria-label="映画メニュー" aria-expanded="false"><span aria-hidden="true"></span></button>
+          <div class="movie-card-menu hidden" role="menu">
+            <button type="button" role="menuitem" data-menu-action="watched">視聴済みにする</button>
+            <button type="button" role="menuitem" data-menu-action="unwatched">未視聴に戻す</button>
+            <button type="button" role="menuitem" data-menu-action="delete">削除</button>
+          </div>
         </div>
       </article>
     </template>
 
-    <template id="reverseBeatTemplate">
-      <article class="reverse-item">
-        <div class="item-main">
-          <div class="title-row">
-            <h3></h3>
-            <span class="priority-badge reverse-badge">逆箱</span>
-          </div>
-          <p class="beat-meta"></p>
-          <p class="note-line reverse-beats"></p>
-          <p class="note-line reverse-note"></p>
+    <template id="manualBeatTemplate">
+      <label class="manual-beat-field">
+        <div class="manual-beat-head">
+          <span></span>
+          <small></small>
         </div>
-        <div class="item-actions">
-          <button class="small-button edit-button" type="button">編集</button>
-          <button class="small-button danger-button delete-button" type="button">削除</button>
+        <div class="time-picker">
+          <select></select>
+          <span>:</span>
+          <select></select>
+          <span>:</span>
+          <select></select>
         </div>
+        <small class="beat-drift" data-manual-drift></small>
+        <textarea rows="2"></textarea>
+      </label>
+    </template>
+
+    <template id="analyzeCardTemplate">
+      <article class="analyze-project-card" role="button" tabindex="0">
+        <div>
+          <span class="analyze-beat-index"></span>
+          <h3></h3>
+          <p class="analyze-card-meta"></p>
+        </div>
+        <p class="analyze-summary"></p>
+        <div class="analyze-card-footer">
+          <span></span>
+        </div>
+      </article>
+    </template>
+
+    <template id="analyzeDetailBeatTemplate">
+      <article class="analyze-detail-beat-row">
+        <div>
+          <span></span>
+          <strong></strong>
+          <small></small>
+        </div>
+        <p></p>
       </article>
     </template>
 

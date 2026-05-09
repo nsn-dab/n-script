@@ -1,0 +1,17 @@
+{
+  "name": "movietool",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Movie Shelf / NReel local web app",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "mammoth": "^1.12.0",
+    "node-pptx-parser": "^1.0.1",
+    "pdf-parse": "^2.4.5"
+  }
+}
+

@@ -2269,3 +2269,214 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
   color: var(--text-muted, #888);
   padding-left: 28px;
 }
+
+/* ── Mentor: New Review Modal ─────────────────────────────────────────────── */
+.mentor-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 500;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  background: var(--surface-color, #111113);
+  border: 1px solid rgba(229, 9, 20, 0.25);
+  border-radius: 12px;
+  padding: 28px 28px 32px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(229,9,20,0.1);
+}
+.mentor-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+.mentor-modal-header .eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-color, #e50914);
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.mentor-modal-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-color, #e8e8e8);
+  margin: 0;
+}
+
+/* ── Mentor: Filter row ───────────────────────────────────────────────────── */
+.mentor-filter-row {
+  border-bottom: 1px solid var(--border-color, #2a2a2a);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+}
+
+/* ── Mentor: Review Cards ─────────────────────────────────────────────────── */
+.mentor-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  padding-bottom: 32px;
+}
+
+.mentor-review-card {
+  position: relative;
+  background: var(--surface-color, #111113);
+  border: 1px solid var(--border-color, #2a2a2a);
+  border-radius: 10px;
+  padding: 18px 48px 18px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mentor-review-card:hover,
+.mentor-review-card:focus-visible {
+  border-color: rgba(229, 9, 20, 0.4);
+  background: rgba(229, 9, 20, 0.03);
+  outline: none;
+}
+.mentor-card-high-risk {
+  border-color: rgba(229, 9, 20, 0.35);
+  background: rgba(229, 9, 20, 0.025);
+}
+.mentor-card-high-risk:hover,
+.mentor-card-high-risk:focus-visible {
+  border-color: rgba(229, 9, 20, 0.6);
+}
+
+.mentor-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mentor-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-color, #e8e8e8);
+  margin: 0;
+  line-height: 1.4;
+}
+.mentor-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mentor-card-date {
+  font-size: 0.72rem;
+  color: var(--text-muted, #888);
+  font-family: var(--mono-font, monospace);
+  letter-spacing: 0.02em;
+}
+
+.mentor-card-critical {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.mentor-card-critical-label {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e50914;
+  padding: 2px 6px;
+  border: 1px solid rgba(229, 9, 20, 0.4);
+  border-radius: 3px;
+  background: rgba(229, 9, 20, 0.08);
+}
+.mentor-card-critical-text {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted, #888);
+}
+
+.mentor-card-fix {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.mentor-card-fix-label {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f59e0b;
+  padding: 2px 6px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.07);
+}
+.mentor-card-fix-text {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted, #888);
+}
+
+.mentor-card-delete {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  font-size: 0.9rem;
+  color: var(--text-muted, #888);
+}
+.mentor-review-card:hover .mentor-card-delete,
+.mentor-review-card:focus-within .mentor-card-delete {
+  opacity: 1;
+}
+.mentor-card-delete:hover {
+  color: var(--accent-color, #e50914) !important;
+}
+
+.mentor-no-results {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--text-muted, #888);
+  font-size: 0.9rem;
+}
+
+/* ── Mentor: Empty state ──────────────────────────────────────────────────── */
+.mentor-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 24px;
+  gap: 12px;
+}
+.mentor-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color, #e8e8e8);
+  margin: 0;
+}
+.mentor-empty-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted, #888);
+  line-height: 1.7;
+  margin: 0;
+  max-width: 340px;
+}
+
+/* ── Mentor: Detail view nav ─────────────────────────────────────────────── */
+.mentor-detail-nav {
+  display: flex;
+  align-items: center;
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--border-color, #2a2a2a);
+  margin-bottom: 24px;
+}

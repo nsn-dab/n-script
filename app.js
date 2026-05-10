@@ -460,7 +460,7 @@ function switchTab(tabName) {
   tabPanels.forEach((panel) => toggleAnimatedPanel(panel, panel.dataset.tab === nextTab));
   localStorage.setItem(STORAGE_TAB_KEY, nextTab);
   if (nextTab === "reverse") renderReverseBeats();
-  if (nextTab === "mentor") renderMentorHistory();
+  if (nextTab === "mentor") renderMentorCardList();
 }
 
 function toggleAnimatedPanel(panel, shouldShow) {
@@ -1927,7 +1927,6 @@ const mentorStatus = document.querySelector("#mentorStatus");
 const mentorBusy = document.querySelector("#mentorBusy");
 const mentorResults = document.querySelector("#mentorResults");
 const mentorResultsTitle = document.querySelector("#mentorResultsTitle");
-const mentorResetButton = document.querySelector("#mentorResetButton");
 const mentorRadarSvg = document.querySelector("#mentorRadarSvg");
 const mentorScores = document.querySelector("#mentorScores");
 const mentorHighConcept = document.querySelector("#mentorHighConcept");
@@ -1941,11 +1940,23 @@ const mentorFirstFix = document.querySelector("#mentorFirstFix");
 const mentorHorrorGlobalFit = document.querySelector("#mentorHorrorGlobalFit");
 const mentorCorePotential = document.querySelector("#mentorCorePotential");
 const mentorSourceText = document.querySelector("#mentorSourceText");
-const mentorHistory = document.querySelector("#mentorHistory");
-const mentorHistoryList = document.querySelector("#mentorHistoryList");
+const mentorModal = document.querySelector("#mentorModal");
+const mentorModalBackdrop = document.querySelector("#mentorModalBackdrop");
+const mentorListView = document.querySelector("#mentorListView");
+const mentorDetailView = document.querySelector("#mentorDetailView");
+const mentorCardList = document.querySelector("#mentorCardList");
+const mentorEmptyState = document.querySelector("#mentorEmptyState");
+const mentorNewReviewButton = document.querySelector("#mentorNewReviewButton");
+const mentorEmptyNewButton = document.querySelector("#mentorEmptyNewButton");
+const mentorBackButton = document.querySelector("#mentorBackButton");
+const mentorSearchInput = document.querySelector("#mentorSearchInput");
+const mentorSortSelect = document.querySelector("#mentorSortSelect");
 
 let mentorMode = "text";
 let mentorSelectedFile = null;
+let mentorFilterVerdict = "all";
+let mentorSearchQuery = "";
+let mentorSortOrder = "newest";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1955,6 +1966,60 @@ saveAndRender();
 renderReverseBeats();
 
 // ── Mentor (続き) ─────────────────────────────────────────────────────────
+
+// ── Modal & view state ─────────────────────────────────────────────────────
+
+function openMentorModal() {
+  mentorModal?.classList.remove("hidden");
+  mentorModalBackdrop?.classList.remove("hidden");
+  mentorInputSection?.classList.remove("hidden");
+  mentorBusy?.classList.add("hidden");
+  setMentorStatus("", false);
+  setTimeout(() => document.querySelector("#mentorTitleInput")?.focus(), 50);
+}
+
+function closeMentorModal() {
+  mentorModal?.classList.add("hidden");
+  mentorModalBackdrop?.classList.add("hidden");
+}
+
+function showMentorList() {
+  mentorDetailView?.classList.add("hidden");
+  mentorListView?.classList.remove("hidden");
+  renderMentorCardList();
+}
+
+function showMentorDetail() {
+  mentorListView?.classList.add("hidden");
+  mentorDetailView?.classList.remove("hidden");
+}
+
+mentorNewReviewButton?.addEventListener("click", openMentorModal);
+mentorEmptyNewButton?.addEventListener("click", openMentorModal);
+mentorBackButton?.addEventListener("click", showMentorList);
+document.querySelector("#closeMentorModalButton")?.addEventListener("click", closeMentorModal);
+mentorModalBackdrop?.addEventListener("click", () => {
+  if (!mentorBusy?.classList.contains("hidden")) return;
+  closeMentorModal();
+});
+mentorSearchInput?.addEventListener("input", (e) => {
+  mentorSearchQuery = e.target.value;
+  renderMentorCardList();
+});
+mentorSortSelect?.addEventListener("change", (e) => {
+  mentorSortOrder = e.target.value;
+  renderMentorCardList();
+});
+document.querySelectorAll("[data-mentor-filter]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    mentorFilterVerdict = btn.dataset.mentorFilter;
+    document.querySelectorAll("[data-mentor-filter]").forEach((b) => b.classList.remove("filter-pill-active"));
+    btn.classList.add("filter-pill-active");
+    renderMentorCardList();
+  });
+});
+
+// ── History helpers ────────────────────────────────────────────────────────
 
 function loadMentorHistory() {
   try { return JSON.parse(localStorage.getItem(MENTOR_STORAGE_KEY) || "[]"); } catch { return []; }
@@ -2067,6 +2132,7 @@ async function runMentorAnalyze() {
     });
     const data = await readResponseJson(res);
     if (!res.ok) throw new Error(data.error || "Mentor解析に失敗しました。");
+    closeMentorModal();
     renderMentorResults(data, title, false, sourceText);
   } catch (err) {
     mentorInputSection?.classList.remove("hidden");
@@ -2076,12 +2142,6 @@ async function runMentorAnalyze() {
   }
 }
 
-// Reset
-mentorResetButton?.addEventListener("click", () => {
-  mentorResults?.classList.add("hidden");
-  mentorInputSection?.classList.remove("hidden");
-  setMentorStatus("", false);
-});
 
 // ── Render results ────────────────────────────────────────────────────────
 
@@ -2098,52 +2158,120 @@ function renderMentorResults(data, title, skipSave = false, sourceText = "") {
   renderMentorInterrogations(data.interrogations);
   renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities, data.firstFix, data.corePotential);
   mentorBusy?.classList.add("hidden");
-  mentorResults?.classList.remove("hidden");
-  mentorResults?.scrollIntoView({ behavior: "smooth", block: "start" });
+  showMentorDetail();
+  mentorDetailView?.scrollIntoView({ behavior: "smooth", block: "start" });
   if (!skipSave) {
     addMentorHistoryItem(title, sourceText, data);
-    renderMentorHistory();
+    renderMentorCardList();
   }
 }
 
-function renderMentorHistory() {
-  const list = loadMentorHistory();
-  if (!mentorHistory || !mentorHistoryList) return;
-  if (!list.length) { mentorHistory.classList.add("hidden"); return; }
-  mentorHistory.classList.remove("hidden");
-  mentorHistoryList.innerHTML = list.map((item) => {
-    const verdictCls = (item.data?.verdict || "").toLowerCase();
-    const dateStr = item.date ? new Date(item.date).toLocaleDateString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
-    const versionBadge = item.version ? `<span class="mentor-version-badge">v${item.version}</span>` : "";
-    return `<div class="mentor-history-item" data-id="${escapeHtml(item.id)}">
-      <div class="mentor-history-item-main">
-        <span class="mentor-verdict-badge mentor-verdict-badge-sm ${verdictCls}">${item.data?.verdict || "—"}</span>
-        ${versionBadge}
-        <span class="mentor-history-title">${escapeHtml(item.title)}</span>
-        <span class="mentor-history-date">${dateStr}</span>
+function isMentorHighRisk(item) {
+  const vals = Object.values(item.data?.scores || {}).map(Number).filter((v) => !isNaN(v));
+  const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 100;
+  return avg < 45 || item.data?.horrorGlobalFit?.culturalLockRisk?.level === "HIGH";
+}
+
+function getMentorFilteredList() {
+  let list = loadMentorHistory();
+  if (mentorSearchQuery) {
+    const q = mentorSearchQuery.toLowerCase();
+    list = list.filter((item) =>
+      (item.title || "").toLowerCase().includes(q) ||
+      (item.sourceText || "").toLowerCase().includes(q) ||
+      (item.data?.criticalIssues || []).some((c) => (c.issue || "").toLowerCase().includes(q)) ||
+      (item.data?.firstFix || "").toLowerCase().includes(q)
+    );
+  }
+  if (mentorFilterVerdict !== "all") {
+    if (mentorFilterVerdict === "high-risk") {
+      list = list.filter(isMentorHighRisk);
+    } else {
+      list = list.filter((item) => (item.data?.verdict || "").toLowerCase() === mentorFilterVerdict);
+    }
+  }
+  if (mentorSortOrder === "oldest") {
+    list = [...list].reverse();
+  } else if (mentorSortOrder === "most-critical") {
+    list = [...list].sort((a, b) => {
+      const avg = (item) => {
+        const vs = Object.values(item.data?.scores || {}).map(Number).filter((v) => !isNaN(v));
+        return vs.length ? vs.reduce((s, v) => s + v, 0) / vs.length : 100;
+      };
+      return avg(a) - avg(b);
+    });
+  }
+  return list;
+}
+
+function renderMentorCardList() {
+  const allList = loadMentorHistory();
+  const filtered = getMentorFilteredList();
+
+  const setCount = (id, n) => { const el = document.querySelector(`#${id}`); if (el) el.textContent = n; };
+  setCount("allMentorCount", allList.length);
+  setCount("goMentorCount", allList.filter((i) => (i.data?.verdict || "").toLowerCase() === "go").length);
+  setCount("rewriteMentorCount", allList.filter((i) => (i.data?.verdict || "").toLowerCase() === "rewrite").length);
+  setCount("passMentorCount", allList.filter((i) => (i.data?.verdict || "").toLowerCase() === "pass").length);
+
+  if (!allList.length) {
+    if (mentorCardList) mentorCardList.innerHTML = "";
+    mentorEmptyState?.classList.remove("hidden");
+    return;
+  }
+  mentorEmptyState?.classList.add("hidden");
+  if (!mentorCardList) return;
+
+  if (!filtered.length) {
+    mentorCardList.innerHTML = `<p class="mentor-no-results">条件に合うレビューがありません。</p>`;
+    return;
+  }
+
+  mentorCardList.innerHTML = filtered.map((item) => {
+    const verdict = item.data?.verdict || "—";
+    const verdictCls = verdict.toLowerCase();
+    const version = item.version ? `v${item.version}` : "";
+    const dateStr = item.date
+      ? new Date(item.date).toLocaleDateString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")
+      : "";
+    const critIssue = (item.data?.criticalIssues || [])[0]?.issue || "";
+    const firstFix = item.data?.firstFix || "";
+    const highRisk = isMentorHighRisk(item);
+    return `<article class="mentor-review-card${highRisk ? " mentor-card-high-risk" : ""}" role="button" tabindex="0" data-id="${escapeHtml(item.id)}">
+      <div class="mentor-card-header">
+        <h3 class="mentor-card-title">${escapeHtml(item.title || "無題")}</h3>
+        <div class="mentor-card-meta">
+          <span class="mentor-verdict-badge ${verdictCls}">${escapeHtml(verdict)}</span>
+          ${version ? `<span class="mentor-version-badge">${version}</span>` : ""}
+          ${dateStr ? `<span class="mentor-card-date">${dateStr}</span>` : ""}
+        </div>
       </div>
-      <button class="icon-button mentor-history-delete" data-delete-id="${escapeHtml(item.id)}" aria-label="削除" type="button">✕</button>
-    </div>`;
+      ${critIssue ? `<div class="mentor-card-critical"><span class="mentor-card-critical-label">CRITICAL</span><p class="mentor-card-critical-text">${escapeHtml(critIssue)}</p></div>` : ""}
+      ${firstFix ? `<div class="mentor-card-fix"><span class="mentor-card-fix-label">FIRST FIX</span><p class="mentor-card-fix-text">${escapeHtml(firstFix)}</p></div>` : ""}
+      <button class="icon-button mentor-card-delete" data-delete-id="${escapeHtml(item.id)}" aria-label="削除" type="button">✕</button>
+    </article>`;
   }).join("");
 
-  mentorHistoryList.querySelectorAll(".mentor-history-item-main").forEach((el) => {
-    el.addEventListener("click", () => {
-      const id = el.closest(".mentor-history-item")?.dataset.id;
-      const found = loadMentorHistory().find((i) => i.id === id);
+  mentorCardList.querySelectorAll(".mentor-review-card").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".mentor-card-delete")) return;
+      const found = loadMentorHistory().find((i) => i.id === card.dataset.id);
       if (!found) return;
-      mentorInputSection?.classList.add("hidden");
       renderMentorResults(found.data, found.title, true, found.sourceText || "");
     });
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") card.click(); });
   });
-  mentorHistoryList.querySelectorAll(".mentor-history-delete").forEach((btn) => {
+
+  mentorCardList.querySelectorAll(".mentor-card-delete").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const id = btn.dataset.deleteId;
-      saveMentorHistory(loadMentorHistory().filter((i) => i.id !== id));
-      renderMentorHistory();
+      saveMentorHistory(loadMentorHistory().filter((i) => i.id !== btn.dataset.deleteId));
+      renderMentorCardList();
     });
   });
 }
+
+function renderMentorHistory() { renderMentorCardList(); }
 
 const MENTOR_AXES = [
   { key: "marketability",        label: "市場性",    risks: ["MARKET RISK",    "MARKET WATCH",   "MARKET OK",    "MARKET STRONG"] },

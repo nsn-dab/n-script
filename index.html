@@ -68,7 +68,10 @@
           <div class="topbar-panel hidden" data-header="mentor">
             <div>
               <h1>Mentor</h1>
-              <p class="page-subtitle">企画を市場視点で分析し、次の改稿につなげよう。</p>
+              <p class="page-subtitle">企画開発DB。ライターズルーム前の防衛記録。</p>
+            </div>
+            <div class="top-actions">
+              <button class="primary-button" id="mentorNewReviewButton" type="button"><span aria-hidden="true">＋</span> New Review</button>
             </div>
           </div>
         </header>
@@ -80,6 +83,7 @@
           <div class="dialog-backdrop hidden" id="detailBackdrop"></div>
           <div class="dialog-backdrop hidden" id="analyzeBackdrop"></div>
           <div class="dialog-backdrop hidden" id="analyzeDetailBackdrop"></div>
+          <div class="dialog-backdrop hidden" id="mentorModalBackdrop"></div>
 
           <section class="confirm-dialog hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
             <div>
@@ -327,109 +331,107 @@
 
           <section class="list-panel tab-panel hidden" id="mentorPanel" data-tab="mentor" aria-label="Mentor">
 
-            <!-- History list -->
-            <div class="mentor-history hidden" id="mentorHistory">
-              <div class="mentor-history-header">
-                <h3 class="mentor-section-heading">分析履歴</h3>
-              </div>
-              <div class="mentor-history-list" id="mentorHistoryList"></div>
-            </div>
-
-            <!-- Input form -->
-            <div class="mentor-input-section" id="mentorInputSection">
-              <div class="mentor-mode-toggle" id="mentorModeToggle" aria-label="入力モード">
-                <button class="filter-pill filter-pill-active" type="button" data-mentor-mode="text">テキスト入力</button>
-                <button class="filter-pill" type="button" data-mentor-mode="file">ファイル</button>
-              </div>
-
-              <div id="mentorTextArea">
-                <label class="mentor-label" for="mentorTitleInput">タイトル（任意）</label>
-                <input class="text-input mentor-title-input" id="mentorTitleInput" type="text" placeholder="例：ザ・リング、オリジナル企画タイトル">
-                <label class="mentor-label" for="mentorTextInput">企画テキスト</label>
-                <textarea class="mentor-textarea" id="mentorTextInput" placeholder="ログライン、プロット、treatment、箱書き、企画書、アイデアメモなど。数行でも解析できます。" rows="10"></textarea>
-              </div>
-
-              <div id="mentorFileArea" class="hidden">
-                <label class="mentor-label" for="mentorFileTitleInput">タイトル（任意）</label>
-                <input class="text-input mentor-title-input" id="mentorFileTitleInput" type="text" placeholder="例：ザ・リング、オリジナル企画タイトル">
-                <div class="mentor-drop-zone" id="mentorDropZone" tabindex="0" role="button" aria-label="ファイルをドロップまたはクリックして選択">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0-12L8.5 6.5M12 3l3.5 3.5"/><path d="M4 17v1a3 3 0 003 3h10a3 3 0 003-3v-1"/></svg>
-                  <p id="mentorDropLabel">PDF / Word / PPTX / TXT をドロップ<br><span>またはクリックして選択</span></p>
-                  <input type="file" id="mentorFileInput" accept=".pdf,.docx,.pptx,.txt,.md" class="sr-only">
+            <!-- LIST VIEW (default) -->
+            <div id="mentorListView">
+              <div class="tool-row mentor-filter-row">
+                <div class="filter-pills" aria-label="Mentor filters">
+                  <button class="filter-pill filter-pill-active" type="button" data-mentor-filter="all">All <span id="allMentorCount">0</span></button>
+                  <button class="filter-pill" type="button" data-mentor-filter="go">GO <span id="goMentorCount">0</span></button>
+                  <button class="filter-pill" type="button" data-mentor-filter="rewrite">REWRITE <span id="rewriteMentorCount">0</span></button>
+                  <button class="filter-pill" type="button" data-mentor-filter="pass">PASS <span id="passMentorCount">0</span></button>
+                  <button class="filter-pill" type="button" data-mentor-filter="high-risk">HIGH RISK</button>
+                </div>
+                <div class="filter-tools">
+                  <label class="search-box">
+                    <span>検索</span>
+                    <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="10.7" cy="10.7" r="6.2" />
+                      <path d="m15.25 15.25 4.25 4.25" />
+                    </svg>
+                    <input id="mentorSearchInput" type="search" placeholder="タイトルを検索…" />
+                  </label>
+                  <label class="sort-box">
+                    <svg class="sort-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M7 4v14" />
+                      <path d="m4 15 3 3 3-3" />
+                      <path d="M14 6h6" />
+                      <path d="M14 12h4" />
+                      <path d="M14 18h2" />
+                    </svg>
+                    <select id="mentorSortSelect" aria-label="レビューの並び順">
+                      <option value="newest">Newest</option>
+                      <option value="oldest">Oldest</option>
+                      <option value="most-critical">Most Critical</option>
+                    </select>
+                  </label>
                 </div>
               </div>
-
-              <p class="mentor-status hidden" id="mentorStatus" aria-live="polite"></p>
-              <button class="primary-button mentor-analyze-button" id="mentorAnalyzeButton" type="button">分析開始</button>
+              <div class="mentor-card-list" id="mentorCardList" aria-live="polite"></div>
+              <div class="mentor-empty-state hidden" id="mentorEmptyState">
+                <p class="mentor-empty-title">まだMentorレビューはありません。</p>
+                <p class="mentor-empty-desc">企画を入力して、ライターズルーム前の防衛レビューを開始してください。</p>
+                <button class="primary-button" id="mentorEmptyNewButton" type="button">＋ New Review</button>
+              </div>
             </div>
 
-            <!-- Busy overlay -->
-            <div class="mentor-busy hidden" id="mentorBusy" aria-hidden="true">
-              <div class="analyze-busy-spinner" aria-hidden="true"></div>
-              <p>企画を分析中・・・</p>
-              <p class="mentor-busy-hint">分析完了まで約30〜60秒ほどかかります。しばらくお待ちください。</p>
-            </div>
-
-            <!-- Results -->
-            <div class="mentor-results hidden" id="mentorResults">
-              <div class="mentor-results-header">
-                <div>
-                  <p class="mentor-results-title-label">解析対象</p>
-                  <h2 class="mentor-results-title" id="mentorResultsTitle">—</h2>
-                </div>
-                <button class="secondary-button" id="mentorResetButton" type="button">新しい企画を入力</button>
+            <!-- DETAIL VIEW (hidden by default) -->
+            <div class="hidden" id="mentorDetailView">
+              <div class="mentor-detail-nav">
+                <button class="detail-back-button" id="mentorBackButton" type="button">
+                  <span aria-hidden="true">←</span> Reviews
+                </button>
               </div>
 
-              <!-- CRITICAL ISSUE: 最初に止まる理由（スコアより上） -->
-              <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
-
-              <!-- Source text: 履歴から復元時のみ表示 -->
-              <div class="mentor-source-text hidden" id="mentorSourceText"></div>
-
-              <!-- Section 1: Analysis report -->
-              <div class="mentor-section">
-                <h3 class="mentor-section-heading">① 分析レポート</h3>
-                <div class="mentor-radar-row">
-                  <div class="mentor-radar-wrap">
-                    <svg class="mentor-radar-svg" id="mentorRadarSvg" viewBox="0 0 220 220" aria-hidden="true"></svg>
-                    <div class="mentor-radar-labels" id="mentorRadarLabels"></div>
+              <div class="mentor-results" id="mentorResults">
+                <div class="mentor-results-header">
+                  <div>
+                    <p class="mentor-results-title-label">解析対象</p>
+                    <h2 class="mentor-results-title" id="mentorResultsTitle">—</h2>
                   </div>
-                  <div class="mentor-scores" id="mentorScores"></div>
                 </div>
-                <div class="mentor-high-concept" id="mentorHighConcept"></div>
-                <div class="mentor-analyses" id="mentorAnalyses"></div>
-              </div>
 
-              <!-- Section 2: Horror / Global Fit -->
-              <div class="mentor-section">
-                <h3 class="mentor-section-heading">② HORROR / GLOBAL FIT</h3>
-                <div class="mentor-horror-global-fit" id="mentorHorrorGlobalFit"></div>
-              </div>
+                <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
+                <div class="mentor-source-text hidden" id="mentorSourceText"></div>
 
-              <!-- Section 3: Box office simulation -->
-              <div class="mentor-section">
-                <h3 class="mentor-section-heading">③ 興行シミュレーション</h3>
-                <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
-              </div>
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">① 分析レポート</h3>
+                  <div class="mentor-radar-row">
+                    <div class="mentor-radar-wrap">
+                      <svg class="mentor-radar-svg" id="mentorRadarSvg" viewBox="0 0 220 220" aria-hidden="true"></svg>
+                      <div class="mentor-radar-labels" id="mentorRadarLabels"></div>
+                    </div>
+                    <div class="mentor-scores" id="mentorScores"></div>
+                  </div>
+                  <div class="mentor-high-concept" id="mentorHighConcept"></div>
+                  <div class="mentor-analyses" id="mentorAnalyses"></div>
+                </div>
 
-              <!-- Section 4: Interrogations -->
-              <div class="mentor-section">
-                <h3 class="mentor-section-heading">④ 想定詰問</h3>
-                <p class="mentor-interrogation-intro">企画会議・ライターズルームで飛んでくる弾。事前に回答を用意してください。</p>
-                <div class="mentor-interrogations" id="mentorInterrogations"></div>
-              </div>
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">② HORROR / GLOBAL FIT</h3>
+                  <div class="mentor-horror-global-fit" id="mentorHorrorGlobalFit"></div>
+                </div>
 
-              <!-- Section 5: Verdict -->
-              <div class="mentor-section">
-                <h3 class="mentor-section-heading">⑤ 最終判定</h3>
-                <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
-                <!-- FIRST FIX: REWRITE判定時のみ表示 -->
-                <div class="mentor-firstfix hidden" id="mentorFirstFix"></div>
-                <div class="mentor-priorities" id="mentorPriorities"></div>
-                <!-- CORE POTENTIAL: 必ず表示 -->
-                <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">③ 興行シミュレーション</h3>
+                  <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
+                </div>
+
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">④ 想定詰問</h3>
+                  <p class="mentor-interrogation-intro">企画会議・ライターズルームで飛んでくる弾。事前に回答を用意してください。</p>
+                  <div class="mentor-interrogations" id="mentorInterrogations"></div>
+                </div>
+
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">⑤ 最終判定</h3>
+                  <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
+                  <div class="mentor-firstfix hidden" id="mentorFirstFix"></div>
+                  <div class="mentor-priorities" id="mentorPriorities"></div>
+                  <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
+                </div>
               </div>
             </div>
+
           </section>
 
           <section class="detail-dialog analyze-detail-dialog hidden" id="analyzeDetailDialog" role="dialog" aria-modal="true" aria-labelledby="analyzeDetailTitle">
@@ -553,6 +555,53 @@
               <p class="analyze-status" id="analyzeStatus" aria-live="polite"></p>
             </form>
           </section>
+
+          <!-- Mentor: New Review Modal -->
+          <section class="mentor-modal hidden" id="mentorModal" role="dialog" aria-modal="true" aria-labelledby="mentorModalTitle">
+            <div class="mentor-modal-header">
+              <div>
+                <p class="eyebrow">Mentor</p>
+                <h2 id="mentorModalTitle">New Review</h2>
+              </div>
+              <button class="icon-button close-button" id="closeMentorModalButton" type="button" title="閉じる" aria-label="閉じる">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+
+            <div id="mentorInputSection">
+              <div class="mentor-mode-toggle" id="mentorModeToggle" aria-label="入力モード">
+                <button class="filter-pill filter-pill-active" type="button" data-mentor-mode="text">テキスト入力</button>
+                <button class="filter-pill" type="button" data-mentor-mode="file">ファイル</button>
+              </div>
+
+              <div id="mentorTextArea">
+                <label class="mentor-label" for="mentorTitleInput">タイトル（任意）</label>
+                <input class="text-input mentor-title-input" id="mentorTitleInput" type="text" placeholder="例：ザ・リング、オリジナル企画タイトル">
+                <label class="mentor-label" for="mentorTextInput">企画テキスト</label>
+                <textarea class="mentor-textarea" id="mentorTextInput" placeholder="ログライン、プロット、treatment、箱書き、企画書、アイデアメモなど。数行でも解析できます。" rows="10"></textarea>
+              </div>
+
+              <div id="mentorFileArea" class="hidden">
+                <label class="mentor-label" for="mentorFileTitleInput">タイトル（任意）</label>
+                <input class="text-input mentor-title-input" id="mentorFileTitleInput" type="text" placeholder="例：ザ・リング、オリジナル企画タイトル">
+                <div class="mentor-drop-zone" id="mentorDropZone" tabindex="0" role="button" aria-label="ファイルをドロップまたはクリックして選択">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0-12L8.5 6.5M12 3l3.5 3.5"/><path d="M4 17v1a3 3 0 003 3h10a3 3 0 003-3v-1"/></svg>
+                  <p id="mentorDropLabel">PDF / Word / PPTX / TXT をドロップ<br><span>またはクリックして選択</span></p>
+                  <input type="file" id="mentorFileInput" accept=".pdf,.docx,.pptx,.txt,.md" class="sr-only">
+                </div>
+              </div>
+
+              <p class="mentor-status hidden" id="mentorStatus" aria-live="polite"></p>
+              <button class="primary-button mentor-analyze-button" id="mentorAnalyzeButton" type="button">分析開始</button>
+            </div>
+
+            <div class="mentor-busy hidden" id="mentorBusy" aria-hidden="true">
+              <div class="analyze-busy-spinner" aria-hidden="true"></div>
+              <p>企画を分析中・・・</p>
+              <p class="mentor-busy-hint">分析完了まで約30〜60秒ほどかかります。しばらくお待ちください。</p>
+            </div>
+          </section>
+
         </section>
       </div>
     </main>

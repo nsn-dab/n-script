@@ -2249,13 +2249,13 @@ function renderMentorCardList() {
     const highRisk = isMentorHighRisk(item);
     const hasBody = critIssue || firstFix;
     return `<article class="mentor-review-card${highRisk ? " mentor-card-high-risk" : ""}" role="button" tabindex="0" data-id="${escapeHtml(item.id)}">
+      <div class="mentor-card-header">
+        <h3 class="mentor-card-title">${escapeHtml(item.title || "無題")}</h3>
+      </div>
       <div class="mentor-card-meta">
         <span class="mentor-verdict-badge ${verdictCls}">${escapeHtml(verdict)}</span>
         ${version ? `<span class="mentor-version-badge">${version}</span>` : ""}
         ${dateStr ? `<span class="mentor-card-date">${dateStr}</span>` : ""}
-      </div>
-      <div class="mentor-card-header">
-        <h3 class="mentor-card-title">${escapeHtml(item.title || "無題")}</h3>
       </div>
       ${hasBody ? `<div class="mentor-card-divider"></div>` : ""}
       ${critIssue ? `<div class="mentor-card-critical"><span class="mentor-card-critical-label">CRITICAL</span><p class="mentor-card-critical-text">${escapeHtml(critIssue)}</p></div>` : ""}

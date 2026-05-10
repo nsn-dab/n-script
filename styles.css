@@ -2294,19 +2294,16 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
   margin-bottom: 22px;
   gap: 16px;
 }
-.mentor-modal-header .eyebrow {
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 0 0 4px;
-  font-weight: 600;
-}
 .mentor-modal-header h2 {
   font-size: 1.1rem;
   font-weight: 760;
   color: var(--ink);
-  margin: 0;
+  margin: 0 0 2px;
+}
+.mentor-modal .meta-line {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
 }
 
 /* ── Mentor: Filter row (same as .movie-filter-row) ──────────────────────── */
@@ -2365,13 +2362,13 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
 .mentor-card-high-risk { border-color: rgba(224,0,18,.22); }
 .mentor-card-high-risk:hover { border-color: rgba(224,0,18,.5); }
 
-/* card: top meta row (verdict + version + date) */
+/* card: verdict + version + date row */
 .mentor-card-meta {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .mentor-card-date {
   font-size: var(--text-xs);
@@ -2380,14 +2377,22 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
   margin-left: auto;
 }
 
-/* card: title */
-.mentor-card-header { margin-bottom: 12px; }
+/* card: title → verdict row */
+.mentor-card-header { margin-bottom: 6px; }
 .mentor-card-title {
   font-size: var(--text-lg);
   font-weight: 700;
   color: #fff;
   margin: 0;
   line-height: 1.35;
+}
+/* verdict badge compact override for card context */
+.mentor-review-card .mentor-verdict-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 4px;
 }
 
 /* card: divider */

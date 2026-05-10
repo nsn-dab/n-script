@@ -1935,6 +1935,7 @@ const mentorAnalyses = document.querySelector("#mentorAnalyses");
 const mentorBoxOffice = document.querySelector("#mentorBoxOffice");
 const mentorVerdictBlock = document.querySelector("#mentorVerdictBlock");
 const mentorPriorities = document.querySelector("#mentorPriorities");
+const mentorInterrogations = document.querySelector("#mentorInterrogations");
 const mentorHistory = document.querySelector("#mentorHistory");
 const mentorHistoryList = document.querySelector("#mentorHistoryList");
 
@@ -2069,6 +2070,7 @@ function renderMentorResults(data, title, skipSave = false) {
   renderMentorHighConcept(data.highConceptAnalysis);
   renderMentorAnalyses(data.analyses, data.scores);
   renderMentorBoxOffice(data.boxOffice);
+  renderMentorInterrogations(data.interrogations);
   renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities);
   mentorBusy?.classList.add("hidden");
   mentorResults?.classList.remove("hidden");
@@ -2246,6 +2248,22 @@ function renderMentorVerdict(verdict, reason, priorities) {
         `<div class="mentor-priority-item"><span class="mentor-priority-num">${i + 1}</span><span>${escapeHtml(p)}</span></div>`,
       ).join("");
   }
+}
+
+function renderMentorInterrogations(items) {
+  if (!mentorInterrogations) return;
+  if (!Array.isArray(items) || !items.length) {
+    mentorInterrogations.innerHTML = "";
+    return;
+  }
+  mentorInterrogations.innerHTML = items.map((item, i) => `
+    <div class="mentor-interrogation-item">
+      <div class="mentor-interrogation-q">
+        <span class="mentor-interrogation-num">Q${i + 1}</span>
+        <span class="mentor-interrogation-text">${escapeHtml(item.question)}</span>
+      </div>
+      ${item.reason ? `<div class="mentor-interrogation-reason">${escapeHtml(item.reason)}</div>` : ""}
+    </div>`).join("");
 }
 
 function escapeHtml(str) {

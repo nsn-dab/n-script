@@ -803,7 +803,10 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
   },
   "verdict": "GO" または "REWRITE" または "PASS",
   "verdictReason": "判定理由（200〜300字）",
-  "rewritePriorities": ["最優先改稿事項1", "最優先改稿事項2", "最優先改稿事項3"]
+  "rewritePriorities": ["最優先改稿事項1", "最優先改稿事項2", "最優先改稿事項3"],
+  "interrogations": [
+    { "question": "企画会議で飛んでくる厳しい質問（5〜8個）", "reason": "なぜこの質問が飛んでくるか（1〜2行）" }
+  ]
 }
 
 ## 検閲姿勢
@@ -845,6 +848,23 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
 - PASS: 致命的欠陥が複数あり、改稿で解決できない構造的問題を抱えている。
 
 原則としてREWRITEが基準。GOは強い企画にのみ。PASSも必要なら出す。
+
+## 想定詰問（interrogations）の作り方
+企画会議・ライターズルームで実際に飛んでくる質問を5〜8個生成する。
+
+ルール：
+- 入力された企画の弱点に直結させる（一般論の質問禁止）
+- 抽象論ではなく、「この企画の、この設定・この構造・このキャラクター」に向けた具体的な質問
+- 口調はプロデューサー/ライターズルーム視点。厳しいが人格攻撃はしない
+- 褒め表現・励まし・「可能性があります」などの柔らかい表現は使わない
+- reasonには「なぜこの質問が企画会議で飛んでくるか」を1〜2行で説明する
+- reasonも同様に厳しく、市場論・構造論で説明する
+
+良い質問例：
+- 「主人公が受動的すぎる。なぜ彼/彼女がこの事件に関わらなければならないのか、論理的に説明してください」
+- 「この世界観で予算はいくらを想定していますか？そのスケールで損益分岐点に到達できる観客動員数は？」
+- 「ミッドポイントで物語が反転するはずですが、この企画のミッドポイントはどこですか？なぜそれが転換点になるのか」
+- 「海外に売る場合、この企画を3行で説明してください。特に、なぜ"日本発"である必要があるのか」
 
 ## 最終目標
 これはAIによる肯定体験ではない。実際の企画会議・プロデューサー合評に近い圧力を再現し、
@@ -891,6 +911,13 @@ function normalizeMentorResponse(raw) {
     verdict: ["GO", "REWRITE", "PASS"].includes(raw.verdict) ? raw.verdict : "REWRITE",
     verdictReason: cleanText(raw.verdictReason || ""),
     rewritePriorities: (Array.isArray(raw.rewritePriorities) ? raw.rewritePriorities : []).map(cleanText).filter(Boolean).slice(0, 6),
+    interrogations: (Array.isArray(raw.interrogations) ? raw.interrogations : [])
+      .map((item) => ({
+        question: cleanText(item?.question || ""),
+        reason: cleanText(item?.reason || ""),
+      }))
+      .filter((item) => item.question)
+      .slice(0, 8),
   };
 }
 

@@ -1,6 +1,7 @@
 const STORAGE_KEY = "movie-shelf-items";
 const STORAGE_BEATS_KEY = "reverse-beats";
 const STORAGE_TAB_KEY = "current-tab";
+const STORAGE_SHARED_MIGRATED_KEY = "nscript-shared-data-migrated";
 
 const sampleMovies = [
   {
@@ -59,8 +60,9 @@ const analyzeBeatDefinitions = [
   { id: "final_image", label: "ファイナル・イメージ", page: "110", ratio: 1, placeholder: "変化した後の世界。1との対比" },
 ];
 
-let movies = loadMovies();
-let reverseBeats = loadReverseBeats();
+let movies = [];
+let reverseBeats = [];
+let mentorHistory = [];
 let editingId = null;
 let pendingConfirmAction = null;
 let detailMovieId = null;
@@ -298,12 +300,12 @@ renderManualBeatFields();
 
 function loadMovies() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return sampleMovies;
+  if (!saved) return [];
   try {
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed.map(normalizeMovie) : sampleMovies;
+    return Array.isArray(parsed) ? parsed.map(normalizeMovie) : [];
   } catch {
-    return sampleMovies;
+    return [];
   }
 }
 
@@ -367,7 +369,7 @@ function saveMovie(payload) {
 }
 
 function saveAndRender() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(movies));
+  persistSharedData({ movies });
   render();
 }
 
@@ -379,6 +381,53 @@ function loadReverseBeats() {
     return Array.isArray(parsed) ? parsed.map(normalizeReverseBeat) : [];
   } catch {
     return [];
+  }
+}
+
+async function loadSharedData() {
+  const response = await fetch("/api/shared-data");
+  if (!response.ok) throw new Error("共有データを読み込めませんでした。");
+  return response.json();
+}
+
+async function persistSharedData(payload) {
+  try {
+    await fetch("/api/shared-data", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.warn("共有データの保存に失敗しました。", error);
+  }
+}
+
+async function initializeSharedData() {
+  try {
+    const shared = await loadSharedData();
+    const localMovies = loadMovies();
+    const localAnalyzeItems = loadReverseBeats();
+    const localMentorHistory = loadMentorHistoryFromLocalStorage();
+    const hasSharedData = [shared.movies, shared.analyzeItems, shared.mentorHistory].some((items) => Array.isArray(items) && items.length > 0);
+    const hasLocalData = [localMovies, localAnalyzeItems, localMentorHistory].some((items) => Array.isArray(items) && items.length > 0);
+
+    if (!hasSharedData && hasLocalData && localStorage.getItem(STORAGE_SHARED_MIGRATED_KEY) !== "true") {
+      movies = localMovies;
+      reverseBeats = localAnalyzeItems;
+      mentorHistory = localMentorHistory;
+      await persistSharedData({ movies, analyzeItems: reverseBeats, mentorHistory });
+      localStorage.setItem(STORAGE_SHARED_MIGRATED_KEY, "true");
+      return;
+    }
+
+    movies = Array.isArray(shared.movies) ? shared.movies.map(normalizeMovie) : [];
+    reverseBeats = Array.isArray(shared.analyzeItems) ? shared.analyzeItems.map(normalizeReverseBeat) : [];
+    mentorHistory = Array.isArray(shared.mentorHistory) ? shared.mentorHistory : [];
+  } catch (error) {
+    console.warn("共有データの読み込みに失敗したためlocalStorageを使います。", error);
+    movies = loadMovies();
+    reverseBeats = loadReverseBeats();
+    mentorHistory = loadMentorHistoryFromLocalStorage();
   }
 }
 
@@ -445,7 +494,7 @@ function buildClientTheoryBeats(runtime) {
 }
 
 function saveReverseBeats() {
-  localStorage.setItem(STORAGE_BEATS_KEY, JSON.stringify(reverseBeats));
+  persistSharedData({ analyzeItems: reverseBeats });
   renderReverseBeats();
 }
 
@@ -1969,10 +2018,16 @@ let mentorSortOrder = "newest";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const savedTab = localStorage.getItem(STORAGE_TAB_KEY) || "movies";
-switchTab(savedTab);
-saveAndRender();
-renderReverseBeats();
+initializeApp();
+
+async function initializeApp() {
+  await initializeSharedData();
+  const savedTab = localStorage.getItem(STORAGE_TAB_KEY) || "movies";
+  switchTab(savedTab);
+  render();
+  renderReverseBeats();
+  renderMentorCardList();
+}
 
 // ── Mentor (続き) ─────────────────────────────────────────────────────────
 
@@ -2047,10 +2102,15 @@ document.querySelectorAll("[data-mentor-filter]").forEach((btn) => {
 // ── History helpers ────────────────────────────────────────────────────────
 
 function loadMentorHistory() {
+  return mentorHistory;
+}
+
+function loadMentorHistoryFromLocalStorage() {
   try { return JSON.parse(localStorage.getItem(MENTOR_STORAGE_KEY) || "[]"); } catch { return []; }
 }
 function saveMentorHistory(list) {
-  localStorage.setItem(MENTOR_STORAGE_KEY, JSON.stringify(list));
+  mentorHistory = Array.isArray(list) ? list : [];
+  persistSharedData({ mentorHistory });
 }
 function getVersionForTitle(title) {
   const key = (title || "").trim().toLowerCase();

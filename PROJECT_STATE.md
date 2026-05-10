@@ -106,12 +106,17 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 
 ## データ保存
 
-ブラウザの `localStorage` に保存する。
+端末間で同じデータを表示するため、アプリ本体データはSupabase Postgresに保存する。
+現時点ではユーザー分離なしで、利用者2名が同じ共有データを見る前提。
 
-- 映画リスト: `movie-shelf-items`（互換維持のため旧キー名を利用）
-- 15ビート逆箱: `reverse-beats`
-- Mentor履歴: `mentor-history`
-- 最後に開いていたタブ: `current-tab`
+- Render無料公開URL運用では Persistent Disk は使わず、Supabase無料枠のPostgresを使う
+- Render環境変数に `SUPABASE_URL` と `SUPABASE_SERVICE_ROLE_KEY` を設定する
+- Supabase側には `app_state (key text primary key, json jsonb, updated_at timestamptz)` テーブルを用意する
+- Supabase未設定のローカル開発時のみ `nscript-data.local.json`（Git管理しない）へフォールバック保存する
+- 共有保存API: `GET /api/shared-data` / `PUT /api/shared-data`
+- 共有保存データ: `movies`, `analyzeItems`, `mentorHistory`
+- 旧localStorageキー `movie-shelf-items`, `reverse-beats`, `mentor-history` は初回移行元として読む
+- 最後に開いていたタブ: `current-tab`（端末ごとの表示状態なのでlocalStorage）
 - Gemini日次利用回数: `.gemini-usage.json`（ローカルファイル。Git管理しない）
 
 書き出しファイルは `movie-shelf-backup-YYYYMMDD.json`（互換維持のため旧接頭辞）。
@@ -176,13 +181,13 @@ node server.js
 - Scriptの2ルート（脚本DB / Upload）を安定運用し、PDF/DOCX/PPTX抽出の失敗ケースを潰す
 - Mentorの3ステップ（モード選択→レポート→シミュレーション）をMVPで実装する
 - Global Chat（常設）とMentor内Contextual Chat（限定）を分離実装する
-- 現状のlocalStorage依存機能を洗い出し、サーバー保存への移行対象を確定する
+- 共有Supabase保存の運用確認と、複数端末同時編集時の上書きリスクを確認する
 - 失敗時メッセージ、ロード状態、再試行導線などUXの最低品質を揃える
 
 ### Phase 2: 公開基盤化（認証・永続化・セキュリティ）
 
 - ユーザー認証を導入し、映画/Analyze/Mentor/チャット履歴をユーザー単位で完全分離する
-- localStorage中心設計からサーバーDB中心設計へ移行する（必要最小限のみクライアントキャッシュ）
+- 共有Supabase保存からユーザー認証つきサーバーDBへ拡張する（必要最小限のみクライアントキャッシュ）
 - APIキー管理を本番構成に移行する（サーバー側秘密情報、環境差分管理、ローテーション）
 - Upload APIにサイズ制限、形式検証、レート制限を導入する
 - 本番監視（アプリログ、APIエラー率、遅延、モデル利用量）を整備する

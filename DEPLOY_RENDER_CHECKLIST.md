@@ -59,11 +59,26 @@ Optional but recommended:
 - [ ] `GEMINI_MODEL` (optional override)
 - [ ] `GEMINI_ANALYZE_MODEL` (optional override)
 - [ ] `GEMINI_MENTOR_MODEL` (optional override)
+- [ ] `SUPABASE_URL`
+- [ ] `SUPABASE_SERVICE_ROLE_KEY`
 
 Notes:
 
 - Do not upload `.env` directly to repo.
 - Configure all runtime secrets in Render dashboard.
+- Free Render deploy uses Supabase for shared saved data. Persistent Disk is not required.
+
+### Supabase setup
+
+Run this SQL in Supabase SQL Editor before first deploy:
+
+```sql
+create table if not exists app_state (
+  key text primary key,
+  json jsonb not null,
+  updated_at timestamptz not null default now()
+);
+```
 
 ---
 
@@ -72,7 +87,10 @@ Notes:
 - [ ] Render build succeeds
 - [ ] Service starts without crash loops
 - [ ] App URL loads correctly
+- [ ] `GET /api/shared-data` returns JSON on the Render public URL
 - [ ] Discover tab works (search/add/edit/delete)
+- [ ] Add a Discover item, reload, and confirm it remains
+- [ ] Open the Render public URL from another device/browser and confirm the same saved item appears
 - [ ] Analyze Manual save works
 - [ ] Analyze Script (DB route) works
 - [ ] Analyze Script (Upload route) works
@@ -89,7 +107,7 @@ Notes:
 
 - [ ] Add request rate limiting for chat/upload/analyze endpoints
 - [ ] Add auth and user-scoped data ownership
-- [ ] Move critical data from localStorage-only model to server persistence
+- [ ] Confirm shared Supabase data survives Render redeploy/restart
 - [ ] Add structured logging and alerting
 - [ ] Add clear upload error handling and user-facing retry guidance
 - [ ] Add usage/cost controls for Gemini calls
@@ -121,4 +139,3 @@ Notes:
 
 - Confirm MIME/extension is supported.
 - Re-test with non-scanned text PDF and standard DOCX/PPTX.
-

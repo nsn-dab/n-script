@@ -9,3 +9,6 @@ build/
 recovery-backup/
 .gemini-usage.json
 skills/
+nscript-data.local.json
+nscript-data.sqlite
+nscript-data.sqlite-*

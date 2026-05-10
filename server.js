@@ -9,6 +9,9 @@ const PORT = Number(process.env.PORT) || 5173;
 const HOST = "0.0.0.0";
 const ROOT = __dirname;
 loadEnvFile(path.join(ROOT, ".env"));
+const SUPABASE_URL = cleanText(process.env.SUPABASE_URL || "");
+const SUPABASE_SERVICE_ROLE_KEY = cleanText(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "");
+const LOCAL_SHARED_DATA_PATH = process.env.NSCRIPT_LOCAL_DATA_PATH || path.join(ROOT, "nscript-data.local.json");
 const BASIC_AUTH_USER = cleanText(process.env.BASIC_AUTH_USER || "");
 const BASIC_AUTH_PASS = cleanText(process.env.BASIC_AUTH_PASS || "");
 
@@ -83,6 +86,103 @@ const mimeTypes = {
   ".svg": "image/svg+xml; charset=utf-8",
 };
 
+async function readSharedDataKey(key, fallback) {
+  if (isSupabaseConfigured()) return readSupabaseDataKey(key, fallback);
+  return readLocalSharedDataKey(key, fallback);
+}
+
+async function writeSharedDataKey(key, value) {
+  if (isSupabaseConfigured()) return writeSupabaseDataKey(key, value);
+  return writeLocalSharedDataKey(key, value);
+}
+
+async function getSharedDataSnapshot() {
+  return {
+    movies: await readSharedDataKey("movies", []),
+    analyzeItems: await readSharedDataKey("analyzeItems", []),
+    mentorHistory: await readSharedDataKey("mentorHistory", []),
+  };
+}
+
+async function handleSharedData(request, response) {
+  if (request.method === "GET") return sendJson(response, 200, await getSharedDataSnapshot());
+  if (request.method !== "PUT") return sendJson(response, 405, { error: "GETまたはPUTでリクエストしてください。" });
+  try {
+    const payload = await readJsonBody(request);
+    if (Array.isArray(payload.movies)) await writeSharedDataKey("movies", payload.movies);
+    if (Array.isArray(payload.analyzeItems)) await writeSharedDataKey("analyzeItems", payload.analyzeItems);
+    if (Array.isArray(payload.mentorHistory)) await writeSharedDataKey("mentorHistory", payload.mentorHistory);
+    sendJson(response, 200, await getSharedDataSnapshot());
+  } catch (error) {
+    sendJson(response, error.statusCode || 500, { error: error.message || "共有データの保存に失敗しました。" });
+  }
+}
+
+function isSupabaseConfigured() {
+  return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+}
+
+function getSupabaseRestUrl(key = "") {
+  const base = SUPABASE_URL.replace(/\/+$/, "");
+  return `${base}/rest/v1/app_state${key ? `?key=eq.${encodeURIComponent(key)}` : ""}`;
+}
+
+function getSupabaseHeaders(prefer = "") {
+  return {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    "content-type": "application/json",
+    ...(prefer ? { prefer } : {}),
+  };
+}
+
+async function readSupabaseDataKey(key, fallback) {
+  const response = await fetch(getSupabaseRestUrl(key), {
+    headers: getSupabaseHeaders(),
+  });
+  if (!response.ok) throw new Error(`Supabase共有データの取得に失敗しました。HTTP ${response.status}`);
+  const rows = await response.json().catch(() => []);
+  const value = Array.isArray(rows) ? rows[0]?.json : null;
+  return Array.isArray(fallback) ? (Array.isArray(value) ? value : fallback) : value || fallback;
+}
+
+async function writeSupabaseDataKey(key, value) {
+  const response = await fetch(getSupabaseRestUrl(), {
+    method: "POST",
+    headers: getSupabaseHeaders("resolution=merge-duplicates"),
+    body: JSON.stringify({
+      key,
+      json: value,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!response.ok) throw new Error(`Supabase共有データの保存に失敗しました。HTTP ${response.status}`);
+}
+
+function readLocalSharedData() {
+  try {
+    return JSON.parse(fs.readFileSync(LOCAL_SHARED_DATA_PATH, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalSharedData(data) {
+  fs.writeFileSync(LOCAL_SHARED_DATA_PATH, JSON.stringify(data, null, 2));
+}
+
+function readLocalSharedDataKey(key, fallback) {
+  const data = readLocalSharedData();
+  const value = data[key];
+  return Array.isArray(fallback) ? (Array.isArray(value) ? value : fallback) : value || fallback;
+}
+
+function writeLocalSharedDataKey(key, value) {
+  const data = readLocalSharedData();
+  data[key] = value;
+  writeLocalSharedData(data);
+}
+
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
   const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
@@ -117,6 +217,7 @@ const server = http.createServer(async (request, response) => {
   if (requestUrl.pathname === "/api/gemini/mentor") return handleGeminiMentor(request, response);
   if (requestUrl.pathname === "/api/mentor/analyze") return handleMentorAnalyze(request, response);
   if (requestUrl.pathname === "/api/gemini-usage") return handleGeminiUsage(request, response);
+  if (requestUrl.pathname === "/api/shared-data") return handleSharedData(request, response);
   serveStatic(requestUrl, response);
 });
 

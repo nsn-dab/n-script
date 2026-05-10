@@ -1942,8 +1942,9 @@ const mentorCorePotential = document.querySelector("#mentorCorePotential");
 const mentorSourceText = document.querySelector("#mentorSourceText");
 const mentorModal = document.querySelector("#mentorModal");
 const mentorModalBackdrop = document.querySelector("#mentorModalBackdrop");
+const mentorDetailDialog = document.querySelector("#mentorDetailDialog");
+const mentorDetailBackdrop = document.querySelector("#mentorDetailBackdrop");
 const mentorListView = document.querySelector("#mentorListView");
-const mentorDetailView = document.querySelector("#mentorDetailView");
 const mentorCardList = document.querySelector("#mentorCardList");
 const mentorEmptyState = document.querySelector("#mentorEmptyState");
 const mentorNewReviewButton = document.querySelector("#mentorNewReviewButton");
@@ -1984,14 +1985,22 @@ function closeMentorModal() {
 }
 
 function showMentorList() {
-  mentorDetailView?.classList.add("hidden");
+  mentorDetailDialog?.classList.remove("detail-entering");
+  mentorDetailDialog?.classList.add("hidden");
+  mentorDetailBackdrop?.classList.add("hidden");
   mentorListView?.classList.remove("hidden");
   renderMentorCardList();
 }
 
 function showMentorDetail() {
   mentorListView?.classList.add("hidden");
-  mentorDetailView?.classList.remove("hidden");
+  mentorDetailDialog?.classList.remove("detail-entering");
+  mentorDetailDialog?.classList.remove("hidden");
+  mentorDetailBackdrop?.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    mentorDetailDialog?.classList.add("detail-entering");
+    mentorBackButton?.focus();
+  });
 }
 
 mentorNewReviewButton?.addEventListener("click", openMentorModal);
@@ -2002,6 +2011,7 @@ mentorModalBackdrop?.addEventListener("click", () => {
   if (!mentorBusy?.classList.contains("hidden")) return;
   closeMentorModal();
 });
+mentorDetailBackdrop?.addEventListener("click", showMentorList);
 mentorSearchInput?.addEventListener("input", (e) => {
   mentorSearchQuery = e.target.value;
   renderMentorCardList();
@@ -2159,7 +2169,7 @@ function renderMentorResults(data, title, skipSave = false, sourceText = "") {
   renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities, data.firstFix, data.corePotential);
   mentorBusy?.classList.add("hidden");
   showMentorDetail();
-  mentorDetailView?.scrollIntoView({ behavior: "smooth", block: "start" });
+  mentorDetailDialog?.scrollTo({ top: 0, behavior: "smooth" });
   if (!skipSave) {
     addMentorHistoryItem(title, sourceText, data);
     renderMentorCardList();
@@ -2237,15 +2247,17 @@ function renderMentorCardList() {
     const critIssue = (item.data?.criticalIssues || [])[0]?.issue || "";
     const firstFix = item.data?.firstFix || "";
     const highRisk = isMentorHighRisk(item);
+    const hasBody = critIssue || firstFix;
     return `<article class="mentor-review-card${highRisk ? " mentor-card-high-risk" : ""}" role="button" tabindex="0" data-id="${escapeHtml(item.id)}">
+      <div class="mentor-card-meta">
+        <span class="mentor-verdict-badge ${verdictCls}">${escapeHtml(verdict)}</span>
+        ${version ? `<span class="mentor-version-badge">${version}</span>` : ""}
+        ${dateStr ? `<span class="mentor-card-date">${dateStr}</span>` : ""}
+      </div>
       <div class="mentor-card-header">
         <h3 class="mentor-card-title">${escapeHtml(item.title || "無題")}</h3>
-        <div class="mentor-card-meta">
-          <span class="mentor-verdict-badge ${verdictCls}">${escapeHtml(verdict)}</span>
-          ${version ? `<span class="mentor-version-badge">${version}</span>` : ""}
-          ${dateStr ? `<span class="mentor-card-date">${dateStr}</span>` : ""}
-        </div>
       </div>
+      ${hasBody ? `<div class="mentor-card-divider"></div>` : ""}
       ${critIssue ? `<div class="mentor-card-critical"><span class="mentor-card-critical-label">CRITICAL</span><p class="mentor-card-critical-text">${escapeHtml(critIssue)}</p></div>` : ""}
       ${firstFix ? `<div class="mentor-card-fix"><span class="mentor-card-fix-label">FIRST FIX</span><p class="mentor-card-fix-text">${escapeHtml(firstFix)}</p></div>` : ""}
       <button class="icon-button mentor-card-delete" data-delete-id="${escapeHtml(item.id)}" aria-label="削除" type="button">✕</button>

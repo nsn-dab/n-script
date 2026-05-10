@@ -84,6 +84,7 @@
           <div class="dialog-backdrop hidden" id="analyzeBackdrop"></div>
           <div class="dialog-backdrop hidden" id="analyzeDetailBackdrop"></div>
           <div class="dialog-backdrop hidden" id="mentorModalBackdrop"></div>
+          <div class="dialog-backdrop hidden" id="mentorDetailBackdrop"></div>
 
           <section class="confirm-dialog hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
             <div>
@@ -374,64 +375,6 @@
               </div>
             </div>
 
-            <!-- DETAIL VIEW (hidden by default) -->
-            <div class="hidden" id="mentorDetailView">
-              <div class="mentor-detail-nav">
-                <button class="detail-back-button" id="mentorBackButton" type="button">
-                  <span aria-hidden="true">←</span> Reviews
-                </button>
-              </div>
-
-              <div class="mentor-results" id="mentorResults">
-                <div class="mentor-results-header">
-                  <div>
-                    <p class="mentor-results-title-label">解析対象</p>
-                    <h2 class="mentor-results-title" id="mentorResultsTitle">—</h2>
-                  </div>
-                </div>
-
-                <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
-                <div class="mentor-source-text hidden" id="mentorSourceText"></div>
-
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">① 分析レポート</h3>
-                  <div class="mentor-radar-row">
-                    <div class="mentor-radar-wrap">
-                      <svg class="mentor-radar-svg" id="mentorRadarSvg" viewBox="0 0 220 220" aria-hidden="true"></svg>
-                      <div class="mentor-radar-labels" id="mentorRadarLabels"></div>
-                    </div>
-                    <div class="mentor-scores" id="mentorScores"></div>
-                  </div>
-                  <div class="mentor-high-concept" id="mentorHighConcept"></div>
-                  <div class="mentor-analyses" id="mentorAnalyses"></div>
-                </div>
-
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">② HORROR / GLOBAL FIT</h3>
-                  <div class="mentor-horror-global-fit" id="mentorHorrorGlobalFit"></div>
-                </div>
-
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">③ 興行シミュレーション</h3>
-                  <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
-                </div>
-
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">④ 想定詰問</h3>
-                  <p class="mentor-interrogation-intro">企画会議・ライターズルームで飛んでくる弾。事前に回答を用意してください。</p>
-                  <div class="mentor-interrogations" id="mentorInterrogations"></div>
-                </div>
-
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">⑤ 最終判定</h3>
-                  <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
-                  <div class="mentor-firstfix hidden" id="mentorFirstFix"></div>
-                  <div class="mentor-priorities" id="mentorPriorities"></div>
-                  <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
-                </div>
-              </div>
-            </div>
-
           </section>
 
           <section class="detail-dialog analyze-detail-dialog hidden" id="analyzeDetailDialog" role="dialog" aria-modal="true" aria-labelledby="analyzeDetailTitle">
@@ -554,6 +497,64 @@
               </div>
               <p class="analyze-status" id="analyzeStatus" aria-live="polite"></p>
             </form>
+          </section>
+
+          <!-- Mentor: Review Detail Dialog (full-screen, like Discover) -->
+          <section class="detail-dialog mentor-detail-dialog hidden" id="mentorDetailDialog" role="dialog" aria-modal="true" aria-labelledby="mentorDetailTitle">
+            <div class="detail-heading">
+              <button class="detail-back-button" id="mentorBackButton" type="button">
+                <span aria-hidden="true">←</span>
+                Reviews
+              </button>
+            </div>
+            <div class="mentor-detail-dialog-body">
+              <div class="mentor-results" id="mentorResults">
+                <div class="mentor-results-header">
+                  <p class="mentor-results-title-label">解析対象</p>
+                  <h2 class="mentor-results-title" id="mentorResultsTitle" id="mentorDetailTitle">—</h2>
+                </div>
+
+                <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
+                <div class="mentor-source-text hidden" id="mentorSourceText"></div>
+
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">① 分析レポート</h3>
+                  <div class="mentor-radar-row">
+                    <div class="mentor-radar-wrap">
+                      <svg class="mentor-radar-svg" id="mentorRadarSvg" viewBox="0 0 220 220" aria-hidden="true"></svg>
+                      <div class="mentor-radar-labels" id="mentorRadarLabels"></div>
+                    </div>
+                    <div class="mentor-scores" id="mentorScores"></div>
+                  </div>
+                  <div class="mentor-high-concept" id="mentorHighConcept"></div>
+                  <div class="mentor-analyses" id="mentorAnalyses"></div>
+                </div>
+
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">② HORROR / GLOBAL FIT</h3>
+                  <div class="mentor-horror-global-fit" id="mentorHorrorGlobalFit"></div>
+                </div>
+
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">③ 興行シミュレーション</h3>
+                  <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
+                </div>
+
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">④ 想定詰問</h3>
+                  <p class="mentor-interrogation-intro">企画会議・ライターズルームで飛んでくる弾。事前に回答を用意してください。</p>
+                  <div class="mentor-interrogations" id="mentorInterrogations"></div>
+                </div>
+
+                <div class="mentor-section">
+                  <h3 class="mentor-section-heading">⑤ 最終判定</h3>
+                  <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
+                  <div class="mentor-firstfix hidden" id="mentorFirstFix"></div>
+                  <div class="mentor-priorities" id="mentorPriorities"></div>
+                  <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- Mentor: New Review Modal -->

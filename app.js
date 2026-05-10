@@ -2369,7 +2369,7 @@ const MENTOR_ANALYSIS_LABELS = [
 
 function renderMentorScores(scores) {
   if (!mentorScores) return;
-  mentorScores.innerHTML = MENTOR_AXES.map(({ key, label }) => {
+  const rows = MENTOR_AXES.map(({ key, label }) => {
     const val = Number(scores?.[key]) || 0;
     return `<div class="mentor-score-item">
       <div class="mentor-score-header">
@@ -2377,10 +2377,11 @@ function renderMentorScores(scores) {
         <span class="mentor-score-value-plain">${val}</span>
       </div>
       <div class="mentor-score-bar-wrap">
-        <div class="mentor-score-bar-bg"><span class="mentor-score-pass-marker" aria-hidden="true"></span><div class="mentor-score-bar-fill" style="width:${val}%"></div></div>
+        <div class="mentor-score-bar-bg"><span class="mentor-score-pass-marker" aria-hidden="true"></span><div class="mentor-score-bar-fill ${getMentorScoreClass(val)}" style="width:${val}%"></div></div>
       </div>
     </div>`;
   }).join("");
+  mentorScores.innerHTML = rows;
 }
 
 function renderMentorHighConcept(hc) {
@@ -2397,19 +2398,22 @@ function renderMentorHighConcept(hc) {
     mentorHighConcept.innerHTML = "";
     return;
   }
-  mentorHighConcept.innerHTML = `<div class="mentor-hc-panel"><div class="mentor-hc-grid">${inner}</div></div>`;
+  mentorHighConcept.innerHTML = `<div class="mentor-hc-panel"><p class="mentor-subsection-title">企画フック</p><div class="mentor-hc-grid">${inner}</div></div>`;
 }
 
 function renderMentorAnalyses(analyses, scores) {
   if (!mentorAnalyses || !analyses) return;
-  mentorAnalyses.innerHTML = MENTOR_ANALYSIS_LABELS.map(({ key, label }) => {
+  const rows = MENTOR_ANALYSIS_LABELS.map(({ key, label }) => {
     const val = Number(scores?.[key]) || 0;
     const text = analyses[key] || "";
     return text ? `<div class="mentor-analysis-flat">
-      <h4 class="mentor-analysis-flat-title">${escapeHtml(label)}（${val}）</h4>
+      <div class="mentor-analysis-flat-head">
+        <h4 class="mentor-analysis-flat-title">${escapeHtml(label)}</h4>
+      </div>
       <p class="mentor-analysis-flat-body">${escapeHtml(text)}</p>
     </div>` : "";
   }).join("");
+  mentorAnalyses.innerHTML = rows ? `<p class="mentor-subsection-title">評価軸</p>${rows}` : "";
 }
 
 function renderMentorBoxOffice(bo) {
@@ -2426,7 +2430,7 @@ function renderMentorBoxOffice(bo) {
         bo[key] ? `<div class="mentor-bo-item"><div class="mentor-bo-label">${label}</div><div class="mentor-bo-value">${escapeHtml(bo[key])}</div></div>` : "",
       ).join("")
     : "";
-  mentorBoxOffice.innerHTML = html;
+  mentorBoxOffice.innerHTML = html ? `<p class="mentor-subsection-title">市場想定</p>${html}` : "";
   if (mentorBoxOfficeSection) {
     mentorBoxOfficeSection.classList.toggle("hidden", !html.trim());
   }
@@ -2435,18 +2439,23 @@ function renderMentorBoxOffice(bo) {
 function renderMentorVerdictLead(verdict, reason) {
   if (!mentorVerdictBlock) return;
   const cls = (verdict || "").toLowerCase();
-  const reasonTrim = (reason || "").trim();
+  mentorVerdictBlock.className = `mentor-verdict-result ${cls}`;
   mentorVerdictBlock.innerHTML = `
-      <div class="mentor-verdict-badge ${cls}">${verdict || "—"}</div>
-      <p class="mentor-verdict-reason mentor-verdict-lead${reasonTrim ? "" : " mentor-verdict-missing"}">${reasonTrim ? escapeHtml(reason) : "一言総評なし。再査定してください。"}</p>`;
+      ${mentorVerdictIcon(cls)}
+      <div class="mentor-verdict-badge ${cls}">${verdict || "—"}</div>`;
 }
 
 function renderMentorFirstFixSlot(firstFix, verdict) {
   if (!mentorFirstFix) return;
   const fix = String(firstFix || "").trim();
   if (fix) {
+    const { title, body } = splitMentorPoint(fix);
     mentorFirstFix.classList.remove("mentor-firstfix-muted");
-    mentorFirstFix.innerHTML = `<p class="mentor-firstfix-text">${escapeHtml(fix)}</p>`;
+    mentorFirstFix.innerHTML = `
+      <div class="mentor-firstfix-item">
+        <p class="mentor-firstfix-title">${escapeHtml(title)}</p>
+        ${body ? `<p class="mentor-firstfix-text">${escapeHtml(body)}</p>` : ""}
+      </div>`;
     return;
   }
   mentorFirstFix.classList.add("mentor-firstfix-muted");
@@ -2457,13 +2466,22 @@ function renderMentorFirstFixSlot(firstFix, verdict) {
   mentorFirstFix.innerHTML = `<p class="mentor-firstfix-empty">${escapeHtml(msg)}</p>`;
 }
 
+function splitMentorPoint(text) {
+  const normalized = String(text || "").replace(/\s+/g, " ").trim();
+  const match = normalized.match(/^(.{1,42}?[。！？!?]|.{1,42})(.*)$/);
+  if (!match) return { title: normalized, body: "" };
+  return {
+    title: match[1].trim(),
+    body: match[2].trim(),
+  };
+}
+
 function renderMentorCorePotential(corePotential) {
   if (!mentorCorePotential) return;
   const text = String(corePotential || "").trim();
   mentorCorePotential.classList.toggle("hidden", !text);
   if (!text) return;
   mentorCorePotential.innerHTML = `
-        <p class="mentor-core-plain-heading">残る核</p>
         <p class="mentor-core-potential-text">${escapeHtml(text)}</p>`;
 }
 
@@ -2477,7 +2495,7 @@ function renderMentorPriorities(priorities) {
     return;
   }
   mentorPriorities.classList.remove("hidden");
-  mentorPriorities.innerHTML = list.map((p, i) =>
+  mentorPriorities.innerHTML = `<p class="mentor-subsection-title">書き直し優先順位</p>` + list.map((p, i) =>
     `<div class="mentor-priority-item"><span class="mentor-priority-num">${i + 1}</span><span>${escapeHtml(p)}</span></div>`,
   ).join("");
 }
@@ -2501,31 +2519,26 @@ function renderMentorHorrorGlobalFit(hgf) {
   if (!mentorHorrorGlobalFit) return;
   if (!hgf) { mentorHorrorGlobalFit.innerHTML = ""; return; }
 
-  const row = (titleJa, rightHtml, bodyHtml) =>
+  const row = (titleHtml, rightHtml, bodyHtml) =>
     `<div class="mentor-hgf-block">
       <div class="mentor-hgf-row">
-        <span class="mentor-hgf-title">${escapeHtml(titleJa)}</span>
+        <span class="mentor-hgf-title">${titleHtml}</span>
         ${rightHtml}
       </div>
       <div class="mentor-hgf-body">${bodyHtml}</div>
     </div>`;
 
-  const scoreTxt = (score) => {
-    const hasNum = score !== null && score !== undefined && Number.isFinite(Number(score));
-    return hasNum ? String(Number(score)) : "—";
-  };
-
   const scoreAxes = [
-    { ja: "海外フック", score: hgf.globalHook?.score, text: hgf.globalHook?.text },
-    { ja: "ポスター力", score: hgf.imagePower?.score, text: hgf.imagePower?.text },
-    { ja: "海外タイトル輸出力", score: hgf.titleExportability?.score, text: hgf.titleExportability?.text },
+    { ja: "海外フック", text: hgf.globalHook?.text },
+    { ja: "ポスター力", text: hgf.imagePower?.text },
+    { ja: "海外タイトル輸出力", text: hgf.titleExportability?.text },
   ];
 
-  const scorePart = scoreAxes.map(({ ja, score, text }) => {
+  const scorePart = scoreAxes.map(({ ja, text }) => {
     const body = text
       ? `<p class="mentor-hgf-text">${escapeHtml(text)}</p>`
       : `<p class="mentor-hgf-text mentor-hgf-missing">説明テキスト未取得</p>`;
-    return row(ja, `<span class="mentor-hgf-num">${escapeHtml(scoreTxt(score))}</span>`, body);
+    return row(escapeHtml(ja), "", body);
   }).join("");
 
   const dreadText = hgf.uniqueDread?.text || "";
@@ -2536,17 +2549,35 @@ function renderMentorHorrorGlobalFit(hgf) {
   );
 
   const clr = hgf.culturalLockRisk || {};
-  const lockLabel = { HIGH: "高", MEDIUM: "中", LOW: "低" }[clr.level] || "中";
   const lockBody = clr.text
     ? `<p class="mentor-hgf-text">${escapeHtml(clr.text)}</p>`
     : `<p class="mentor-hgf-text mentor-hgf-missing">説明テキスト未取得</p>`;
   const lockPart = row(
     "海外文化依存リスク",
-    `<span class="mentor-hgf-num">${escapeHtml(lockLabel)}</span>`,
+    "",
     lockBody,
   );
 
-  mentorHorrorGlobalFit.innerHTML = `<div class="mentor-hgf-stack">${scorePart}${uniquePart}${lockPart}</div>`;
+  mentorHorrorGlobalFit.innerHTML = `<div class="mentor-hgf-stack"><p class="mentor-subsection-title">海外・ホラー適性</p>${scorePart}${uniquePart}${lockPart}</div>`;
+}
+
+function getMentorScoreClass(score) {
+  const val = Number(score);
+  if (!Number.isFinite(val)) return "mentor-score-chip-neutral";
+  if (val >= 80) return "mentor-score-chip-strong";
+  if (val >= 65) return "mentor-score-chip-ok";
+  if (val >= 45) return "mentor-score-chip-warn";
+  return "mentor-score-chip-danger";
+}
+
+function mentorVerdictIcon(verdict) {
+  const paths = {
+    go: '<path d="M20 6L9 17l-5-5"/><circle cx="12" cy="12" r="9"/>',
+    rewrite: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/>',
+    pass: '<path d="M15 9l-6 6M9 9l6 6"/><circle cx="12" cy="12" r="9"/>',
+  };
+  const path = paths[verdict] || paths.rewrite;
+  return `<span class="mentor-verdict-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${path}</svg></span>`;
 }
 
 function renderMentorCriticalIssues(items) {
@@ -2574,11 +2605,9 @@ function renderMentorInterrogations(items) {
   }
   if (mentorInterrogationsSection) mentorInterrogationsSection.classList.remove("hidden");
   mentorInterrogations.innerHTML = top.map((item) => {
-    const role = item.type ? `<p class="mentor-interrogation-role">${escapeHtml(item.type)}</p>` : "";
     const reason = item.reason ? `<p class="mentor-interrogation-reason-inline">${escapeHtml(item.reason)}</p>` : "";
     return `
     <div class="mentor-interrogation-item">
-      ${role}
       <p class="mentor-interrogation-text-only">${escapeHtml(item.question)}</p>
       ${reason}
     </div>`;

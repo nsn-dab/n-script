@@ -506,7 +506,6 @@
                 <span aria-hidden="true">←</span>
                 一覧へ
               </button>
-              <button class="ghost-button danger-button detail-heading-action" id="mentorDetailDeleteButton" type="button">削除する</button>
             </div>
             <div class="mentor-detail-dialog-body">
               <div class="mentor-results" id="mentorResults">
@@ -516,34 +515,23 @@
                     <h2 class="mentor-results-title" id="mentorDetailTitle">—</h2>
                   </div>
                   <div class="mentor-source-text hidden" id="mentorSourceText"></div>
+
+                  <section class="mentor-executive-summary" aria-label="判定サマリー">
+                    <div class="mentor-verdict-result" id="mentorVerdictBlock"></div>
+                    <div class="mentor-verdict-summary-body">
+                      <div class="mentor-summary-point">
+                        <h3 class="mentor-summary-title">致命的論点</h3>
+                        <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
+                      </div>
+                      <div class="mentor-summary-point">
+                        <h3 class="mentor-summary-title">最初に直す一点</h3>
+                        <div class="mentor-firstfix mentor-firstfix-slot" id="mentorFirstFix"></div>
+                      </div>
+                    </div>
+                  </section>
                 </div>
 
-                <section class="mentor-block mentor-block-verdict" aria-label="判定">
-                  <span class="mentor-step-index" aria-hidden="true">01</span>
-                  <div class="mentor-block-main">
-                    <h3 class="mentor-block-title">判定</h3>
-                    <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
-                  </div>
-                </section>
-
-                <section class="mentor-block mentor-block-critical" aria-label="最重要問題">
-                  <span class="mentor-step-index" aria-hidden="true">02</span>
-                  <div class="mentor-block-main">
-                    <h3 class="mentor-block-title">致命的論点</h3>
-                    <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
-                  </div>
-                </section>
-
-                <section class="mentor-block mentor-block-firstfix" aria-label="最初の一手">
-                  <span class="mentor-step-index" aria-hidden="true">03</span>
-                  <div class="mentor-block-main">
-                    <h3 class="mentor-block-title">最初に直す一点</h3>
-                    <div class="mentor-firstfix mentor-firstfix-slot" id="mentorFirstFix"></div>
-                  </div>
-                </section>
-
                 <section class="mentor-block mentor-block-interrogations" id="mentorInterrogationsSection" aria-label="想定詰問">
-                  <span class="mentor-step-index" aria-hidden="true">04</span>
                   <div class="mentor-block-main">
                     <h3 class="mentor-block-title">想定詰問</h3>
                     <div class="mentor-interrogations" id="mentorInterrogations"></div>
@@ -551,9 +539,8 @@
                 </section>
 
                 <section class="mentor-block mentor-block-deep-dive" aria-label="詳細分析">
-                  <span class="mentor-step-index" aria-hidden="true">05</span>
                   <div class="mentor-block-main">
-                    <details class="mentor-deep-dive">
+                    <details class="mentor-deep-dive" open>
                       <summary class="mentor-deep-dive-summary">
                         <span class="mentor-deep-dive-title">詳細分析</span>
                       </summary>
@@ -567,7 +554,6 @@
                         <div class="mentor-deep-block hidden" id="mentorBoxOfficeSection">
                           <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
                         </div>
-                        <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
                         <div class="mentor-priorities-wrap hidden" id="mentorPrioritiesWrap">
                           <div class="mentor-priorities" id="mentorPriorities"></div>
                         </div>
@@ -575,6 +561,16 @@
                     </details>
                   </div>
                 </section>
+
+                <section class="mentor-block mentor-block-core" aria-label="企画の核">
+                  <div class="mentor-block-main">
+                    <h3 class="mentor-block-title">企画の核</h3>
+                    <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
+                  </div>
+                </section>
+              </div>
+              <div class="mentor-detail-footer">
+                <button class="ghost-button danger-button" id="mentorDetailDeleteButton" type="button">削除する</button>
               </div>
             </div>
           </section>

@@ -383,6 +383,9 @@
               <!-- CRITICAL ISSUE: 最初に止まる理由（スコアより上） -->
               <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
 
+              <!-- Source text: 履歴から復元時のみ表示 -->
+              <div class="mentor-source-text hidden" id="mentorSourceText"></div>
+
               <!-- Section 1: Analysis report -->
               <div class="mentor-section">
                 <h3 class="mentor-section-heading">① 分析レポート</h3>
@@ -397,26 +400,34 @@
                 <div class="mentor-analyses" id="mentorAnalyses"></div>
               </div>
 
-              <!-- Section 2: Box office simulation -->
+              <!-- Section 2: Horror / Global Fit -->
               <div class="mentor-section">
-                <h3 class="mentor-section-heading">② 興行シミュレーション</h3>
+                <h3 class="mentor-section-heading">② HORROR / GLOBAL FIT</h3>
+                <div class="mentor-horror-global-fit" id="mentorHorrorGlobalFit"></div>
+              </div>
+
+              <!-- Section 3: Box office simulation -->
+              <div class="mentor-section">
+                <h3 class="mentor-section-heading">③ 興行シミュレーション</h3>
                 <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
               </div>
 
-              <!-- Section 3: Interrogations -->
+              <!-- Section 4: Interrogations -->
               <div class="mentor-section">
-                <h3 class="mentor-section-heading">③ 想定詰問</h3>
+                <h3 class="mentor-section-heading">④ 想定詰問</h3>
                 <p class="mentor-interrogation-intro">企画会議・ライターズルームで飛んでくる弾。事前に回答を用意してください。</p>
                 <div class="mentor-interrogations" id="mentorInterrogations"></div>
               </div>
 
-              <!-- Section 4: Verdict -->
+              <!-- Section 5: Verdict -->
               <div class="mentor-section">
-                <h3 class="mentor-section-heading">④ 最終判定</h3>
+                <h3 class="mentor-section-heading">⑤ 最終判定</h3>
                 <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
                 <!-- FIRST FIX: REWRITE判定時のみ表示 -->
                 <div class="mentor-firstfix hidden" id="mentorFirstFix"></div>
                 <div class="mentor-priorities" id="mentorPriorities"></div>
+                <!-- CORE POTENTIAL: 必ず表示 -->
+                <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
               </div>
             </div>
           </section>

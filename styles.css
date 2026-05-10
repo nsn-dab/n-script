@@ -1995,6 +1995,131 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
   opacity: 0.7;
 }
 
+/* ── Mentor: Source text (履歴復元時) ───────────────────────────────────── */
+.mentor-source-text {
+  margin-bottom: 20px;
+}
+.mentor-source-details {
+  background: var(--card-bg, #1a1a1a);
+  border: 1px solid var(--border-color, #2a2a2a);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mentor-source-summary {
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  user-select: none;
+  letter-spacing: 0.04em;
+}
+.mentor-source-summary:hover { color: var(--text-color, #e8e8e8); }
+.mentor-source-pre {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--text-color, #e8e8e8);
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-top: 1px solid var(--border-color, #2a2a2a);
+  font-family: inherit;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ── Mentor: バージョンバッジ ────────────────────────────────────────────── */
+.mentor-version-badge {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.45);
+  border: 1px solid rgba(255,255,255,0.13);
+}
+
+/* ── Mentor: HORROR / GLOBAL FIT ────────────────────────────────────────── */
+.mentor-horror-global-fit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mentor-hgf-item {
+  background: var(--card-bg, #1a1a1a);
+  border: 1px solid var(--border-color, #2a2a2a);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.mentor-hgf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.mentor-hgf-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: rgba(255,255,255,0.55);
+}
+.mentor-hgf-score {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.mentor-hgf-score.hgf-ok     { background: rgba(16,185,129,0.1);   color: #10b981;  border: 1px solid rgba(16,185,129,0.3); }
+.mentor-hgf-score.hgf-watch  { background: rgba(245,158,11,0.1);   color: #f59e0b;  border: 1px solid rgba(245,158,11,0.3); }
+.mentor-hgf-score.hgf-danger { background: rgba(229,9,20,0.1);     color: #e50914;  border: 1px solid rgba(229,9,20,0.3); }
+.mentor-hgf-lock {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.mentor-hgf-lock.lock-high   { background: rgba(229,9,20,0.12);    color: #e50914;  border: 1px solid rgba(229,9,20,0.35); }
+.mentor-hgf-lock.lock-medium { background: rgba(245,158,11,0.1);   color: #f59e0b;  border: 1px solid rgba(245,158,11,0.3); }
+.mentor-hgf-lock.lock-low    { background: rgba(16,185,129,0.08);  color: #10b981;  border: 1px solid rgba(16,185,129,0.25); }
+.mentor-hgf-text {
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--text-color, #e8e8e8);
+  margin: 0;
+}
+
+/* ── Mentor: CORE POTENTIAL ─────────────────────────────────────────────── */
+.mentor-core-potential {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-left: 3px solid rgba(255,255,255,0.25);
+  border-radius: 6px;
+}
+.mentor-core-potential-label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 8px;
+}
+.mentor-core-potential-text {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text-color, #e8e8e8);
+  margin: 0;
+  white-space: pre-line;
+}
+
 /* ── Mentor: CRITICAL ISSUE ──────────────────────────────────────────────── */
 .mentor-critical-issues {
   border: 1.5px solid rgba(229, 9, 20, 0.7);

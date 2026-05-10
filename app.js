@@ -1938,6 +1938,9 @@ const mentorPriorities = document.querySelector("#mentorPriorities");
 const mentorInterrogations = document.querySelector("#mentorInterrogations");
 const mentorCriticalIssues = document.querySelector("#mentorCriticalIssues");
 const mentorFirstFix = document.querySelector("#mentorFirstFix");
+const mentorHorrorGlobalFit = document.querySelector("#mentorHorrorGlobalFit");
+const mentorCorePotential = document.querySelector("#mentorCorePotential");
+const mentorSourceText = document.querySelector("#mentorSourceText");
 const mentorHistory = document.querySelector("#mentorHistory");
 const mentorHistoryList = document.querySelector("#mentorHistoryList");
 
@@ -1959,11 +1962,25 @@ function loadMentorHistory() {
 function saveMentorHistory(list) {
   localStorage.setItem(MENTOR_STORAGE_KEY, JSON.stringify(list));
 }
-function addMentorHistoryItem(title, data) {
+function getVersionForTitle(title) {
+  const key = (title || "").trim().toLowerCase();
+  const existing = loadMentorHistory().filter((i) => (i.title || "").trim().toLowerCase() === key);
+  return existing.length + 1;
+}
+
+function addMentorHistoryItem(title, sourceText, data) {
   const list = loadMentorHistory();
-  const item = { id: Date.now().toString(36), title: title || "無題", date: new Date().toISOString(), data };
+  const version = getVersionForTitle(title);
+  const item = {
+    id: Date.now().toString(36),
+    title: title || "無題",
+    version,
+    sourceText: sourceText || "",
+    date: new Date().toISOString(),
+    data,
+  };
   list.unshift(item);
-  saveMentorHistory(list.slice(0, 30));
+  saveMentorHistory(list.slice(0, 50));
   return item;
 }
 
@@ -2017,6 +2034,7 @@ mentorAnalyzeButton?.addEventListener("click", runMentorAnalyze);
 async function runMentorAnalyze() {
   setMentorStatus("", false);
   let title = "";
+  let sourceText = "";
   let bodyOrFormData;
   let isMultipart = false;
 
@@ -2024,10 +2042,12 @@ async function runMentorAnalyze() {
     const text = mentorTextInput?.value?.trim();
     title = mentorTitleInput?.value?.trim() || "";
     if (!text) { setMentorStatus("企画テキストを入力してください。", true); return; }
+    sourceText = text;
     bodyOrFormData = JSON.stringify({ title, text });
   } else {
     if (!mentorSelectedFile) { setMentorStatus("ファイルを選択してください。", true); return; }
     title = mentorFileTitleInput?.value?.trim() || mentorSelectedFile.name.replace(/\.[^.]+$/, "");
+    sourceText = `[ファイル: ${mentorSelectedFile.name}]`;
     const fd = new FormData();
     fd.append("file", mentorSelectedFile);
     fd.append("title", title);
@@ -2047,7 +2067,7 @@ async function runMentorAnalyze() {
     });
     const data = await readResponseJson(res);
     if (!res.ok) throw new Error(data.error || "Mentor解析に失敗しました。");
-    renderMentorResults(data, title);
+    renderMentorResults(data, title, false, sourceText);
   } catch (err) {
     mentorInputSection?.classList.remove("hidden");
     setMentorStatus(err.message || "解析に失敗しました。", true);
@@ -2065,21 +2085,23 @@ mentorResetButton?.addEventListener("click", () => {
 
 // ── Render results ────────────────────────────────────────────────────────
 
-function renderMentorResults(data, title, skipSave = false) {
+function renderMentorResults(data, title, skipSave = false, sourceText = "") {
   if (mentorResultsTitle) mentorResultsTitle.textContent = title || "無題";
+  renderMentorSourceText(sourceText, skipSave);
   renderMentorCriticalIssues(data.criticalIssues);
   renderMentorRadar(data.scores);
   renderMentorScores(data.scores);
   renderMentorHighConcept(data.highConceptAnalysis);
   renderMentorAnalyses(data.analyses, data.scores);
+  renderMentorHorrorGlobalFit(data.horrorGlobalFit);
   renderMentorBoxOffice(data.boxOffice);
   renderMentorInterrogations(data.interrogations);
-  renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities, data.firstFix);
+  renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities, data.firstFix, data.corePotential);
   mentorBusy?.classList.add("hidden");
   mentorResults?.classList.remove("hidden");
   mentorResults?.scrollIntoView({ behavior: "smooth", block: "start" });
   if (!skipSave) {
-    addMentorHistoryItem(title, data);
+    addMentorHistoryItem(title, sourceText, data);
     renderMentorHistory();
   }
 }
@@ -2092,9 +2114,11 @@ function renderMentorHistory() {
   mentorHistoryList.innerHTML = list.map((item) => {
     const verdictCls = (item.data?.verdict || "").toLowerCase();
     const dateStr = item.date ? new Date(item.date).toLocaleDateString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    const versionBadge = item.version ? `<span class="mentor-version-badge">v${item.version}</span>` : "";
     return `<div class="mentor-history-item" data-id="${escapeHtml(item.id)}">
       <div class="mentor-history-item-main">
         <span class="mentor-verdict-badge mentor-verdict-badge-sm ${verdictCls}">${item.data?.verdict || "—"}</span>
+        ${versionBadge}
         <span class="mentor-history-title">${escapeHtml(item.title)}</span>
         <span class="mentor-history-date">${dateStr}</span>
       </div>
@@ -2108,7 +2132,7 @@ function renderMentorHistory() {
       const found = loadMentorHistory().find((i) => i.id === id);
       if (!found) return;
       mentorInputSection?.classList.add("hidden");
-      renderMentorResults(found.data, found.title, true);
+      renderMentorResults(found.data, found.title, true, found.sourceText || "");
     });
   });
   mentorHistoryList.querySelectorAll(".mentor-history-delete").forEach((btn) => {
@@ -2249,7 +2273,7 @@ function renderMentorBoxOffice(bo) {
   ).join("");
 }
 
-function renderMentorVerdict(verdict, reason, priorities, firstFix) {
+function renderMentorVerdict(verdict, reason, priorities, firstFix, corePotential) {
   if (mentorVerdictBlock) {
     const cls = (verdict || "").toLowerCase();
     mentorVerdictBlock.innerHTML = `
@@ -2272,6 +2296,72 @@ function renderMentorVerdict(verdict, reason, priorities, firstFix) {
         `<div class="mentor-priority-item"><span class="mentor-priority-num">${i + 1}</span><span>${escapeHtml(p)}</span></div>`,
       ).join("");
   }
+  // CORE POTENTIAL: 必ず表示
+  if (mentorCorePotential) {
+    const show = !!corePotential;
+    mentorCorePotential.classList.toggle("hidden", !show);
+    if (show) {
+      mentorCorePotential.innerHTML = `
+        <div class="mentor-core-potential-label">CORE POTENTIAL</div>
+        <p class="mentor-core-potential-text">${escapeHtml(corePotential)}</p>`;
+    }
+  }
+}
+
+function renderMentorSourceText(text, isHistory) {
+  if (!mentorSourceText) return;
+  // 履歴から復元した場合のみ表示
+  if (!isHistory || !text) {
+    mentorSourceText.classList.add("hidden");
+    return;
+  }
+  mentorSourceText.classList.remove("hidden");
+  mentorSourceText.innerHTML = `
+    <details class="mentor-source-details">
+      <summary class="mentor-source-summary">元企画テキスト</summary>
+      <pre class="mentor-source-pre">${escapeHtml(text)}</pre>
+    </details>`;
+}
+
+function renderMentorHorrorGlobalFit(hgf) {
+  if (!mentorHorrorGlobalFit) return;
+  if (!hgf) { mentorHorrorGlobalFit.innerHTML = ""; return; }
+
+  const lockLevelCls = { HIGH: "lock-high", MEDIUM: "lock-medium", LOW: "lock-low" }[hgf.culturalLockRisk?.level] || "lock-medium";
+  const lockLabel = { HIGH: "HIGH RISK", MEDIUM: "MEDIUM", LOW: "LOW RISK" }[hgf.culturalLockRisk?.level] || "MEDIUM";
+
+  const scoreAxes = [
+    { key: "globalHook",        label: "GLOBAL HOOK",         score: hgf.globalHook?.score,        text: hgf.globalHook?.text },
+    { key: "imagePower",        label: "IMAGE POWER",         score: hgf.imagePower?.score,         text: hgf.imagePower?.text },
+    { key: "titleExportability",label: "TITLE EXPORTABILITY", score: hgf.titleExportability?.score, text: hgf.titleExportability?.text },
+  ];
+
+  const scorePart = scoreAxes.map(({ label, score, text }) => {
+    const s = Number(score) || 0;
+    const cls = s >= 70 ? "hgf-ok" : s >= 50 ? "hgf-watch" : "hgf-danger";
+    return `<div class="mentor-hgf-item">
+      <div class="mentor-hgf-header">
+        <span class="mentor-hgf-label">${label}</span>
+        <span class="mentor-hgf-score ${cls}">${s}</span>
+      </div>
+      ${text ? `<p class="mentor-hgf-text">${escapeHtml(text)}</p>` : ""}
+    </div>`;
+  }).join("");
+
+  const uniquePart = hgf.uniqueDread?.text ? `<div class="mentor-hgf-item">
+    <div class="mentor-hgf-header"><span class="mentor-hgf-label">UNIQUE DREAD</span></div>
+    <p class="mentor-hgf-text">${escapeHtml(hgf.uniqueDread.text)}</p>
+  </div>` : "";
+
+  const lockPart = hgf.culturalLockRisk?.text ? `<div class="mentor-hgf-item">
+    <div class="mentor-hgf-header">
+      <span class="mentor-hgf-label">CULTURAL LOCK RISK</span>
+      <span class="mentor-hgf-lock ${lockLevelCls}">${lockLabel}</span>
+    </div>
+    <p class="mentor-hgf-text">${escapeHtml(hgf.culturalLockRisk.text)}</p>
+  </div>` : "";
+
+  mentorHorrorGlobalFit.innerHTML = scorePart + uniquePart + lockPart;
 }
 
 function renderMentorCriticalIssues(items) {

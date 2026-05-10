@@ -797,6 +797,13 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
     "hook": "フック検閲（50〜100字、短文）",
     "marketFit": "市場フィット（50〜100字、短文）"
   },
+  "horrorGlobalFit": {
+    "globalHook": { "score": 0から100の整数, "text": "国際観客が一撃で理解できる恐怖か（50〜80字）" },
+    "uniqueDread": { "text": "この企画固有の嫌悪感・尖り（50〜80字）" },
+    "imagePower": { "score": 0から100の整数, "text": "ポスター・予告1枚絵として成立するか（50〜80字）" },
+    "culturalLockRisk": { "level": "HIGH または MEDIUM または LOW", "text": "日本文化依存リスク（50〜80字）" },
+    "titleExportability": { "score": 0から100の整数, "text": "タイトルの海外輸出可能性（50〜80字）" }
+  },
   "boxOffice": {
     "targetAudience": "想定ターゲット層（短く）",
     "ageGender": "年齢層・性別分布（短く）",
@@ -808,6 +815,7 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
   "verdictReason": "判定理由（100〜150字、短文・実務的）",
   "rewritePriorities": ["改善可能な事項1（短く）", "改善可能な事項2", "改善可能な事項3"],
   "firstFix": "REWRITE判定の場合のみ記入。最初に直すべき一点のみ（2〜4行、blunt、実務的）。GO/PASSは空文字",
+  "corePotential": "この企画でまだ掘れる核を短く示す（2〜4行）。禁止：「魅力的」「素晴らしい」等のAI褒め。改善可能なプロデューサーコメントのみ",
   "interrogations": [
     {
       "type": "PRODUCER または SCREENWRITER または STREAMING EXEC または INTERNATIONAL SALES または MARKETING のいずれか",
@@ -845,6 +853,39 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
 - PASS: 複数の致命的欠陥あり、改稿で解決できない構造的問題。
 
 REWRITE が標準。GO は強い企画のみ。PASS も必要なら出す。
+
+## horrorGlobalFit のルール（国際商業ホラー開発視点）
+5軸すべてを評価する。文体はblunt・短文・実務的。
+
+- globalHook（score + text）
+  強い例：「見たら死ぬ」「呪われる」「誰かがいる」→ 海外観客が0秒で理解できる恐怖
+  弱い例：日本文化依存・空気感依存・関係性理解前提
+  score：国際観客が一撃で恐怖を理解できるか（70以上で海外展開可、50以下は翻訳困難）
+
+- uniqueDread（text のみ）
+  「この企画固有の嫌悪感」を指摘する。他作品との差別化、記憶残存力、Jホラー固有性。
+  存在しない場合は「既視感が強い。差別化点が見当たらない」と明記する。
+
+- imagePower（score + text）
+  ポスター1枚・予告30秒で伝わるか。視覚フック。ジャンル瞬時理解。
+  score：80以上で優秀、50以下は視覚フック不足
+
+- culturalLockRisk（level + text）
+  HIGH：海外観客に伝わらない可能性が高い（学校文化・空気読み・関係性前提等）
+  MEDIUM：要説明・要アダプテーション
+  LOW：普遍的な恐怖として翻訳可能
+
+- titleExportability（score + text）
+  RING / JU-ON / DARK WATER レベルを参考に評価。
+  短さ・覚えやすさ・翻訳しやすさ・音の強さ・ポスター映え。
+  score：80以上で輸出可能、50以下は改名推奨
+
+## corePotential のルール
+必ず記入する。空にしない。
+この企画で「まだ掘れる核」を短く示す。
+禁止：「魅力的」「素晴らしい」「期待できる」等のAI褒め。
+改善可能なプロデューサーコメントのみ。
+例：「"透明人間保険"という異常ワードの引力は存在している。現状は観客導線より先にルール説明負荷が来ている」
 
 ## 想定詰問（interrogations）のルール
 5〜8個生成。
@@ -893,6 +934,26 @@ function normalizeMentorResponse(raw) {
       hook: cleanText(raw.highConceptAnalysis?.hook || ""),
       marketFit: cleanText(raw.highConceptAnalysis?.marketFit || ""),
     },
+    horrorGlobalFit: {
+      globalHook: {
+        score: clampScore(raw.horrorGlobalFit?.globalHook?.score),
+        text: cleanText(raw.horrorGlobalFit?.globalHook?.text || ""),
+      },
+      uniqueDread: { text: cleanText(raw.horrorGlobalFit?.uniqueDread?.text || "") },
+      imagePower: {
+        score: clampScore(raw.horrorGlobalFit?.imagePower?.score),
+        text: cleanText(raw.horrorGlobalFit?.imagePower?.text || ""),
+      },
+      culturalLockRisk: {
+        level: ["HIGH", "MEDIUM", "LOW"].includes(raw.horrorGlobalFit?.culturalLockRisk?.level)
+          ? raw.horrorGlobalFit.culturalLockRisk.level : "MEDIUM",
+        text: cleanText(raw.horrorGlobalFit?.culturalLockRisk?.text || ""),
+      },
+      titleExportability: {
+        score: clampScore(raw.horrorGlobalFit?.titleExportability?.score),
+        text: cleanText(raw.horrorGlobalFit?.titleExportability?.text || ""),
+      },
+    },
     boxOffice: {
       targetAudience: cleanText(raw.boxOffice?.targetAudience || ""),
       ageGender: cleanText(raw.boxOffice?.ageGender || ""),
@@ -911,6 +972,7 @@ function normalizeMentorResponse(raw) {
     verdictReason: cleanText(raw.verdictReason || ""),
     rewritePriorities: (Array.isArray(raw.rewritePriorities) ? raw.rewritePriorities : []).map(cleanText).filter(Boolean).slice(0, 6),
     firstFix: cleanText(raw.firstFix || ""),
+    corePotential: cleanText(raw.corePotential || ""),
     interrogations: (Array.isArray(raw.interrogations) ? raw.interrogations : [])
       .map((item) => ({
         type: cleanText(item?.type || ""),

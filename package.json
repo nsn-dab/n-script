@@ -11,7 +11,7 @@
     "busboy": "^1.6.0",
     "mammoth": "^1.12.0",
     "node-pptx-parser": "^1.0.1",
-    "pdf-parse": "^2.4.5"
+    "pdf-parse": "^2.4.5",
+    "puppeteer": "^24.43.0"
   }
 }
-

@@ -506,7 +506,7 @@ function render() {
     renderSplitTitle(heading, movie.title, "movie-card-title");
     const releaseYear = normalizeDateInput(movie.releaseDate).split("-")[0] || "";
     const runtimeLabel = movie.runtime ? `${movie.runtime}分` : "";
-    cardMeta.textContent = [releaseYear, runtimeLabel].filter(Boolean).join(" ・ ") || "公開年・上映時間 未設定";
+    cardMeta.textContent = [releaseYear, runtimeLabel].filter(Boolean).join(" ・ ") || "公開年・上映時間は未記録";
     statusBadge.classList.toggle("hidden", movie.status !== "watched");
     renderStatusButton(statusButton, movie);
     statusButton.addEventListener("click", (event) => toggleWatchedStatus(event, movie));
@@ -702,9 +702,9 @@ function openMovieDetail(id) {
   renderDetailTitle(movie.title);
   detailMeta.textContent = buildDetailMeta(movie);
   renderDetailStatus(movie.status);
-  detailDescription.textContent = movie.description || "概要なし";
+  detailDescription.textContent = movie.description || "概要は未記録です";
   detailDescription.classList.toggle("muted-empty", !movie.description);
-  detailNote.textContent = movie.note || "メモなし";
+  detailNote.textContent = movie.note || "メモは未記録です";
   detailNote.classList.toggle("muted-empty", !movie.note);
   renderDetailFields(movie);
   setPoster(detailPoster, detailPosterImage, detailPosterFallback, movie);
@@ -745,7 +745,7 @@ function splitDisplayTitle(title) {
 
 function buildDetailMeta(movie) {
   const year = normalizeDateInput(movie.releaseDate).split("-")[0] || "";
-  return [year, movie.genre, movie.director].filter(Boolean).join(" ・ ") || "登録情報なし";
+  return [year, movie.genre, movie.director].filter(Boolean).join(" ・ ") || "公開年・ジャンル・監督は未記録です";
 }
 
 function renderDetailFields(movie) {
@@ -911,12 +911,12 @@ function openCandidateDialog(candidates, options = {}) {
     button.className = "candidate-item";
     button.type = "button";
     const meta = [candidate.originalTitle, candidate.releaseDate || candidate.year, candidate.language, `TMDb ${candidate.tmdbId}`].filter(Boolean).join(" ・ ");
-    const description = candidate.overview || "概要未登録。ポスター、公開日、原題、TMDb IDで確認してください。";
+    const description = candidate.overview || "参照できる概要がありません。ポスター・公開日・原題・TMDb IDで同一作品か確認してください。";
     button.innerHTML = `
       <span class="candidate-poster">${candidate.posterUrl ? `<img src="${escapeAttribute(candidate.posterUrl)}" alt="" />` : "NO IMAGE"}</span>
       <span class="candidate-body">
         <strong>${escapeHtml(candidate.title || "無題")}</strong>
-        <small>${escapeHtml(meta || "詳細情報なし")}</small>
+        <small>${escapeHtml(meta || "参照メタがありません")}</small>
         <span class="${candidate.overview ? "" : "candidate-empty-overview"}">${escapeHtml(description)}</span>
       </span>
     `;
@@ -950,7 +950,7 @@ function closeCandidateDialog(options = {}) {
 
 function openAnalyzeCandidateDialog(candidates, onPick, onCancel) {
   if (!analyzeCandidateList || !analyzeCandidateDialog || !analyzeCandidateBackdrop) {
-    setAnalyzeStatus("候補UIを読み込めませんでした。ページを再読み込みしてください。", true);
+    setAnalyzeStatus("候補一覧を読み込めませんでした。ページを再読み込みしてください。", true);
     return;
   }
   analyzeCandidateOnCancel = typeof onCancel === "function" ? onCancel : null;
@@ -960,12 +960,12 @@ function openAnalyzeCandidateDialog(candidates, onPick, onCancel) {
     button.className = "candidate-item";
     button.type = "button";
     const meta = [candidate.originalTitle, candidate.releaseDate || candidate.year, candidate.language, `TMDb ${candidate.tmdbId}`].filter(Boolean).join(" ・ ");
-    const description = candidate.overview || "概要未登録。ポスター、公開日、原題、TMDb IDで確認してください。";
+    const description = candidate.overview || "参照できる概要がありません。ポスター・公開日・原題・TMDb IDで同一作品か確認してください。";
     button.innerHTML = `
       <span class="candidate-poster">${candidate.posterUrl ? `<img src="${escapeAttribute(candidate.posterUrl)}" alt="" />` : "NO IMAGE"}</span>
       <span class="candidate-body">
         <strong>${escapeHtml(candidate.title || "無題")}</strong>
-        <small>${escapeHtml(meta || "詳細情報なし")}</small>
+        <small>${escapeHtml(meta || "参照メタがありません")}</small>
         <span class="${candidate.overview ? "" : "candidate-empty-overview"}">${escapeHtml(description)}</span>
       </span>
     `;
@@ -975,7 +975,7 @@ function openAnalyzeCandidateDialog(candidates, onPick, onCancel) {
       queueMicrotask(() => {
         closeAnalyzeCandidateDialog({ triggerCancel: false });
         Promise.resolve(onPick(candidate)).catch((error) => {
-          setAnalyzeStatus(error.message || "処理に失敗しました。", true);
+          setAnalyzeStatus(error.message || "候補の確定に失敗しました。", true);
         });
       });
     });
@@ -1088,7 +1088,7 @@ function renderReverseBeats() {
 function setAnalyzeBusy(isBusy, message = "処理中・・・") {
   if (!analyzeDialogBusyOverlay || !analyzeDialogBusyLabel) return;
   if (isBusy) {
-    const isAnalyzing = message.includes("解析");
+    const isAnalyzing = message.includes("解析") || message.includes("抽出");
     analyzeDialogBusyLabel.textContent = message;
     analyzeDialogBusyOverlay.classList.remove("hidden");
     analyzeDialogBusyOverlay.setAttribute("aria-busy", "true");
@@ -1145,7 +1145,7 @@ function openAnalyzeSetup(sourceType) {
   updateAnalyzeFormMode();
   const copy = {
     manual: ["Manual", "映画を観ながら15ビートを自分で埋めていく修行モード。"],
-    script: ["Script", "脚本DB、または脚本ファイルからデータを取得・解析し、15ビートで逆箱します。"],
+    script: ["Script", "脚本DBまたは脚本ファイルからテキストを取り込み、15ビートで構造を記録します。"],
   };
   updateManualBeatGuides();
   analyzeDialogTitle.textContent = copy[analyzeSourceType][0];
@@ -1169,9 +1169,13 @@ async function refreshGeminiUsage() {
     const res = await fetch("/api/gemini-usage");
     if (!res.ok) return;
     const data = await res.json();
-    const count = Number(data.count) || 0;
-    const limit = Number(data.limit) || 20;
-    if (geminiUsageText) geminiUsageText.textContent = `Gemini ${count} / ${limit} today`;
+    const ac = Number(data.analyzeCount) || 0;
+    const mc = Number(data.mentorCount) || 0;
+    const al = Number(data.analyzeLimit) || 20;
+    const ml = Number(data.mentorLimit) || 20;
+    if (geminiUsageText) {
+      geminiUsageText.textContent = `Analyze ${ac} / ${al} · Mentor ${mc} / ${ml}（本日）`;
+    }
     if (geminiUsageReset) geminiUsageReset.textContent = resetLabel();
     geminiUsageBar.classList.remove("hidden");
   } catch { /* ignore */ }
@@ -1264,7 +1268,7 @@ async function runScriptDbSearch() {
           reverseInputs.title.value = displayTitle;
           await fetchScriptThenConfirm(displayTitle, searchTitle, { originalTitle, year });
         },
-        () => setAnalyzeStatus("候補選択をキャンセルしました。", true),
+        () => setAnalyzeStatus("候補選択を取りやめました。", true),
       );
       return;
     }
@@ -1331,18 +1335,18 @@ async function fetchScriptThenConfirm(displayTitle, searchTitle, { originalTitle
 
 async function runScriptDbConfirmedPipeline() {
   if (!scriptDbPrefetch?.scriptSessionId) {
-    setAnalyzeStatus("脚本データが見つかりません。もう一度DB検索してください。", true);
+    setAnalyzeStatus("脚本レコードが見つかりません。DB検索をやり直してください。", true);
     return;
   }
   analyzeScriptSearchGeneration += 1;
   const generation = analyzeScriptSearchGeneration;
-  setAnalyzeBusy(true, "解析中・・・");
+  setAnalyzeBusy(true, "構造を抽出中・・・");
   setAnalyzeStatus("", false);
   try {
     await extractAnalyzeBeats({ scriptMode: "script_db", scriptSessionId: scriptDbPrefetch.scriptSessionId });
   } catch (error) {
     if (generation !== analyzeScriptSearchGeneration) return;
-    setAnalyzeStatus(error.message || "解析に失敗しました。", true);
+    setAnalyzeStatus(error.message || "構造の抽出に失敗しました。", true);
   } finally {
     setAnalyzeBusy(false);
   }
@@ -1352,7 +1356,7 @@ async function runScriptUploadAnalyze() {
   analyzeSourceType = "script";
   scriptMode = "file_upload";
   updateAnalyzeFormMode();
-  setAnalyzeBusy(true, "解析中・・・");
+  setAnalyzeBusy(true, "構造を抽出中・・・");
   setAnalyzeStatus("", false);
   try {
     await extractAnalyzeBeats({ scriptMode: "file_upload" });
@@ -1489,7 +1493,7 @@ async function extractAnalyzeBeats(options = {}) {
   const runtime = reverseInputs.runtime.value.trim();
   const effectiveScriptMode = options.scriptMode || scriptMode;
   if (analyzeSourceType === "manual" && (!title || !runtime)) {
-    setAnalyzeStatus("映画タイトルとruntimeを入力してください。", true);
+    setAnalyzeStatus("映画タイトルと上映時間（分）を入力してください。", true);
     return;
   }
   if (analyzeSourceType === "script" && effectiveScriptMode === "script_db" && !title) {
@@ -1498,11 +1502,11 @@ async function extractAnalyzeBeats(options = {}) {
   }
   const scriptSessionId = options.scriptSessionId || scriptDbPrefetch?.scriptSessionId || "";
   if (analyzeSourceType === "script" && effectiveScriptMode === "script_db" && !cleanText(scriptSessionId)) {
-    setAnalyzeStatus("先に「脚本DBから取得」を完了してください。", true);
+    setAnalyzeStatus("先に「脚本DBから取得」で脚本を確定してください。", true);
     return;
   }
   if (analyzeSourceType === "script" && effectiveScriptMode === "file_upload" && !analyzeScriptFileInput.files?.[0]) {
-    setAnalyzeStatus("脚本ファイルを指定してください。", true);
+    setAnalyzeStatus("脚本ファイルを選択してください。", true);
     return;
   }
 
@@ -1511,10 +1515,10 @@ async function extractAnalyzeBeats(options = {}) {
   analyzeScriptUploadButton?.setAttribute("disabled", "true");
   setAnalyzeStatus(
     analyzeSourceType === "script" && effectiveScriptMode === "script_db"
-      ? "Gemini で15ビートを抽出しています。"
+      ? "Geminiで15ビートを抽出しています。"
       : analyzeSourceType === "script"
-        ? "脚本を解析しています。"
-        : "理論値を生成しています。",
+        ? "脚本テキストを解析しています。"
+        : "理論タイムを算出しています。",
     false,
   );
   try {
@@ -1561,7 +1565,7 @@ async function extractAnalyzeBeats(options = {}) {
     analyzeCompletePanel?.classList.remove("hidden");
     refreshGeminiUsage();
   } catch (error) {
-    setAnalyzeStatus(error.message || "保存に失敗しました。", true);
+    setAnalyzeStatus(error.message || "記録の保存に失敗しました。", true);
   } finally {
     extractAnalyzeButton.disabled = false;
     analyzeScriptDbSearchButton?.removeAttribute("disabled");
@@ -1643,7 +1647,7 @@ async function generateAnalyzeLogline() {
     summary: notes[beat.id] || "",
   })).filter((beat) => beat.summary);
   if (!beats.length) {
-    setAnalyzeStatus("ログライン生成には、先に15ビートの内容メモを入力してください。", true);
+    setAnalyzeStatus("ログライン生成には、各ビートのメモ入力が必要です。", true);
     return;
   }
   generateLoglineButton.disabled = true;
@@ -1722,10 +1726,10 @@ function renderAnalyzeBeats() {
     const beats = Array.isArray(item.beats) ? item.beats : [];
     card.querySelector(".analyze-beat-index").textContent = getAnalyzeSourceLabel(item.sourceType);
     card.querySelector("h3").textContent = item.title;
-    card.querySelector(".analyze-card-meta").textContent = `${item.runtime ? `${item.runtime}分` : "runtime未登録"} · ${beats.length || 0} beats`;
-    card.querySelector(".analyze-summary").textContent = item.logline || "ログライン未登録";
+    card.querySelector(".analyze-card-meta").textContent = `${item.runtime ? `${item.runtime}分` : "上映時間は未記録"} · ${beats.length || 0} beats`;
+    card.querySelector(".analyze-summary").textContent = item.logline || "ログラインは未記録";
     card.querySelector(".analyze-card-footer span").textContent = formatAnalyzeCreatedAt(item.createdAt);
-    card.setAttribute("aria-label", `${item.title} のAnalyze詳細を開く`);
+    card.setAttribute("aria-label", `${item.title} の構造記録の詳細を開く`);
     card.addEventListener("click", () => openAnalyzeDetail(item.id));
     card.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
@@ -1785,8 +1789,8 @@ function openAnalyzeEdit(id) {
   populateManualBeatFields(Array.isArray(item.beats) ? item.beats : []);
   updateManualBeatGuides();
   analyzeDialogTitle.textContent = getAnalyzeSourceLabel(analyzeSourceType);
-  analyzeDialogSubtitle.textContent = "保存済みのAnalyzeデータを編集します。";
-  extractAnalyzeButton.textContent = analyzeSourceType === "script" ? "Scriptを再解析" : "保存する";
+  analyzeDialogSubtitle.textContent = "保存済みの構造記録を編集します。";
+  extractAnalyzeButton.textContent = analyzeSourceType === "script" ? "脚本から再抽出" : "保存する";
   extractAnalyzeButton.disabled = false;
   deleteAnalyzeButton.classList.remove("hidden");
   setAnalyzeStatus("", false);
@@ -1801,7 +1805,7 @@ function openAnalyzeDetail(id) {
   const beats = Array.isArray(item.beats) ? normalizeAnalyzeBeats(item.beats) : [];
   analyzeDetailTitle.textContent = item.title || "無題";
   analyzeDetailMeta.textContent = [getAnalyzeSourceLabel(item.sourceType), item.runtime ? `${item.runtime}分` : "", `${beats.length} beats`].filter(Boolean).join(" ・ ");
-  analyzeDetailLogline.textContent = item.logline || "ログライン未登録";
+  analyzeDetailLogline.textContent = item.logline || "ログラインは未記録";
   analyzeDetailBeats.innerHTML = "";
   beats.forEach((beat, index) => {
     const row = analyzeDetailBeatTemplate.content.firstElementChild.cloneNode(true);
@@ -1926,8 +1930,8 @@ const mentorAnalyzeButton = document.querySelector("#mentorAnalyzeButton");
 const mentorStatus = document.querySelector("#mentorStatus");
 const mentorBusy = document.querySelector("#mentorBusy");
 const mentorResults = document.querySelector("#mentorResults");
-const mentorResultsTitle = document.querySelector("#mentorResultsTitle");
-const mentorRadarSvg = document.querySelector("#mentorRadarSvg");
+const mentorDetailTitle = document.querySelector("#mentorDetailTitle");
+const mentorPrioritiesWrap = document.querySelector("#mentorPrioritiesWrap");
 const mentorScores = document.querySelector("#mentorScores");
 const mentorHighConcept = document.querySelector("#mentorHighConcept");
 const mentorAnalyses = document.querySelector("#mentorAnalyses");
@@ -1950,10 +1954,14 @@ const mentorEmptyState = document.querySelector("#mentorEmptyState");
 const mentorNewReviewButton = document.querySelector("#mentorNewReviewButton");
 const mentorEmptyNewButton = document.querySelector("#mentorEmptyNewButton");
 const mentorBackButton = document.querySelector("#mentorBackButton");
+const mentorDetailDeleteButton = document.querySelector("#mentorDetailDeleteButton");
+const mentorBoxOfficeSection = document.querySelector("#mentorBoxOfficeSection");
+const mentorInterrogationsSection = document.querySelector("#mentorInterrogationsSection");
 const mentorSearchInput = document.querySelector("#mentorSearchInput");
 const mentorSortSelect = document.querySelector("#mentorSortSelect");
 
 let mentorMode = "text";
+let mentorCurrentItemId = null;
 let mentorSelectedFile = null;
 let mentorFilterVerdict = "all";
 let mentorSearchQuery = "";
@@ -2012,6 +2020,13 @@ mentorModalBackdrop?.addEventListener("click", () => {
   closeMentorModal();
 });
 mentorDetailBackdrop?.addEventListener("click", showMentorList);
+mentorDetailDeleteButton?.addEventListener("click", () => {
+  if (!mentorCurrentItemId) return;
+  if (!confirm("このレビューを削除しますか？")) return;
+  saveMentorHistory(loadMentorHistory().filter((i) => i.id !== mentorCurrentItemId));
+  mentorCurrentItemId = null;
+  showMentorList();
+});
 mentorSearchInput?.addEventListener("input", (e) => {
   mentorSearchQuery = e.target.value;
   renderMentorCardList();
@@ -2116,11 +2131,11 @@ async function runMentorAnalyze() {
   if (mentorMode === "text") {
     const text = mentorTextInput?.value?.trim();
     title = mentorTitleInput?.value?.trim() || "";
-    if (!text) { setMentorStatus("企画テキストを入力してください。", true); return; }
+    if (!text) { setMentorStatus("査定する企画テキストを入力してください。", true); return; }
     sourceText = text;
     bodyOrFormData = JSON.stringify({ title, text });
   } else {
-    if (!mentorSelectedFile) { setMentorStatus("ファイルを選択してください。", true); return; }
+    if (!mentorSelectedFile) { setMentorStatus("査定するファイルを選択してください。", true); return; }
     title = mentorFileTitleInput?.value?.trim() || mentorSelectedFile.name.replace(/\.[^.]+$/, "");
     sourceText = `[ファイル: ${mentorSelectedFile.name}]`;
     const fd = new FormData();
@@ -2141,12 +2156,12 @@ async function runMentorAnalyze() {
       body: bodyOrFormData,
     });
     const data = await readResponseJson(res);
-    if (!res.ok) throw new Error(data.error || "Mentor解析に失敗しました。");
+    if (!res.ok) throw new Error(data.error || "査定に失敗しました。");
     closeMentorModal();
     renderMentorResults(data, title, false, sourceText);
   } catch (err) {
     mentorInputSection?.classList.remove("hidden");
-    setMentorStatus(err.message || "解析に失敗しました。", true);
+    setMentorStatus(err.message || "査定に失敗しました。", true);
   } finally {
     mentorBusy?.classList.add("hidden");
   }
@@ -2155,23 +2170,27 @@ async function runMentorAnalyze() {
 
 // ── Render results ────────────────────────────────────────────────────────
 
-function renderMentorResults(data, title, skipSave = false, sourceText = "") {
-  if (mentorResultsTitle) mentorResultsTitle.textContent = title || "無題";
+function renderMentorResults(data, title, skipSave = false, sourceText = "", itemId = null) {
+  mentorCurrentItemId = itemId;
+  if (mentorDetailTitle) mentorDetailTitle.textContent = title || "無題";
   renderMentorSourceText(sourceText, skipSave);
+  renderMentorVerdictLead(data.verdict, data.verdictReason);
   renderMentorCriticalIssues(data.criticalIssues);
-  renderMentorRadar(data.scores);
+  renderMentorFirstFixSlot(data.firstFix, data.verdict);
+  renderMentorInterrogations(data.interrogations);
   renderMentorScores(data.scores);
   renderMentorHighConcept(data.highConceptAnalysis);
   renderMentorAnalyses(data.analyses, data.scores);
   renderMentorHorrorGlobalFit(data.horrorGlobalFit);
   renderMentorBoxOffice(data.boxOffice);
-  renderMentorInterrogations(data.interrogations);
-  renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities, data.firstFix, data.corePotential);
+  renderMentorCorePotential(data.corePotential);
+  renderMentorPriorities(data.rewritePriorities);
   mentorBusy?.classList.add("hidden");
   showMentorDetail();
   mentorDetailDialog?.scrollTo({ top: 0, behavior: "smooth" });
   if (!skipSave) {
-    addMentorHistoryItem(title, sourceText, data);
+    const saved = addMentorHistoryItem(title, sourceText, data);
+    mentorCurrentItemId = saved.id;
     renderMentorCardList();
   }
 }
@@ -2233,131 +2252,72 @@ function renderMentorCardList() {
   if (!mentorCardList) return;
 
   if (!filtered.length) {
-    mentorCardList.innerHTML = `<p class="mentor-no-results">条件に合うレビューがありません。</p>`;
+    mentorCardList.innerHTML = `<p class="mentor-no-results">条件に合う査定記録がありません。フィルタまたは検索を調整してください。</p>`;
     return;
   }
 
   mentorCardList.innerHTML = filtered.map((item) => {
     const verdict = item.data?.verdict || "—";
     const verdictCls = verdict.toLowerCase();
-    const version = item.version ? `v${item.version}` : "";
+    const version = item.version ? `v${item.version}` : "—";
     const dateStr = item.date
       ? new Date(item.date).toLocaleDateString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")
-      : "";
-    const critIssue = (item.data?.criticalIssues || [])[0]?.issue || "";
-    const firstFix = item.data?.firstFix || "";
-    const highRisk = isMentorHighRisk(item);
-    const hasBody = critIssue || firstFix;
-    return `<article class="mentor-review-card${highRisk ? " mentor-card-high-risk" : ""}" role="button" tabindex="0" data-id="${escapeHtml(item.id)}">
-      <div class="mentor-card-header">
-        <h3 class="mentor-card-title">${escapeHtml(item.title || "無題")}</h3>
-      </div>
-      <div class="mentor-card-meta">
+      : "—";
+    const reasonRaw = String(item.data?.verdictReason || "").replace(/\s+/g, " ").trim();
+    const reasonDisplay = reasonRaw.length > 360 ? `${reasonRaw.slice(0, 359)}…` : reasonRaw;
+    return `<article class="mentor-review-card" role="button" tabindex="0" data-id="${escapeHtml(item.id)}">
+      <h3 class="mentor-card-title">${escapeHtml(item.title || "無題")}</h3>
+      <div class="mentor-card-meta-line">
+        <span class="mentor-card-meta-piece">${escapeHtml(dateStr)}</span>
+        <span class="mentor-meta-sep" aria-hidden="true">·</span>
+        <span class="mentor-card-meta-piece">${escapeHtml(version)}</span>
+        <span class="mentor-meta-sep" aria-hidden="true">·</span>
         <span class="mentor-verdict-badge ${verdictCls}">${escapeHtml(verdict)}</span>
-        ${version ? `<span class="mentor-version-badge">${version}</span>` : ""}
-        ${dateStr ? `<span class="mentor-card-date">${dateStr}</span>` : ""}
       </div>
-      ${hasBody ? `<div class="mentor-card-divider"></div>` : ""}
-      ${critIssue ? `<div class="mentor-card-critical"><span class="mentor-card-critical-label">CRITICAL</span><p class="mentor-card-critical-text">${escapeHtml(critIssue)}</p></div>` : ""}
-      ${firstFix ? `<div class="mentor-card-fix"><span class="mentor-card-fix-label">FIRST FIX</span><p class="mentor-card-fix-text">${escapeHtml(firstFix)}</p></div>` : ""}
-      <button class="icon-button mentor-card-delete" data-delete-id="${escapeHtml(item.id)}" aria-label="削除" type="button">✕</button>
+      ${reasonDisplay ? `<p class="mentor-card-reason">${escapeHtml(reasonDisplay)}</p>` : `<p class="mentor-card-reason mentor-card-reason-empty">判定理由なし</p>`}
     </article>`;
   }).join("");
 
   mentorCardList.querySelectorAll(".mentor-review-card").forEach((card) => {
     card.addEventListener("click", (e) => {
-      if (e.target.closest(".mentor-card-delete")) return;
       const found = loadMentorHistory().find((i) => i.id === card.dataset.id);
       if (!found) return;
-      renderMentorResults(found.data, found.title, true, found.sourceText || "");
+      renderMentorResults(found.data, found.title, true, found.sourceText || "", found.id);
     });
     card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") card.click(); });
   });
 
-  mentorCardList.querySelectorAll(".mentor-card-delete").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      saveMentorHistory(loadMentorHistory().filter((i) => i.id !== btn.dataset.deleteId));
-      renderMentorCardList();
-    });
-  });
 }
 
 function renderMentorHistory() { renderMentorCardList(); }
 
 const MENTOR_AXES = [
-  { key: "marketability",        label: "市場性",    risks: ["MARKET RISK",    "MARKET WATCH",   "MARKET OK",    "MARKET STRONG"] },
-  { key: "emotionalEngineering", label: "感情設計",  risks: ["HOOK FAILURE",   "HOOK WEAK",      "HOOK OK",      "HOOK STRONG"]   },
-  { key: "firstTenPages",        label: "冒頭フック", risks: ["OPEN COLLAPSE",  "OPEN WEAK",      "OPEN OK",      "OPEN STRONG"]   },
-  { key: "realityCheck",         label: "リアリティ", risks: ["LOGIC BREAK",    "LOGIC WATCH",    "LOGIC OK",     "LOGIC TIGHT"]   },
-  { key: "structure",            label: "構造",      risks: ["STRUCT COLLAPSE", "STRUCT WEAK",    "STRUCT OK",    "STRUCT SOLID"]  },
+  { key: "marketability", label: "市場性" },
+  { key: "emotionalEngineering", label: "感情設計" },
+  { key: "firstTenPages", label: "冒頭フック" },
+  { key: "realityCheck", label: "リアリティ" },
+  { key: "structure", label: "構造" },
 ];
 
 const MENTOR_ANALYSIS_LABELS = [
-  { key: "marketability", label: "① 興行的ポテンシャルと大衆性" },
-  { key: "emotionalEngineering", label: "② 感情・恐怖の設計" },
-  { key: "firstTenPages", label: "③ 映画的フック：10ページの壁" },
-  { key: "realityCheck", label: "④ リアリティとロジックの検閲" },
-  { key: "structure", label: "⑤ 構造分析：15ビートの黄金律" },
+  { key: "marketability", label: "興行的ポテンシャルと大衆性" },
+  { key: "emotionalEngineering", label: "感情・恐怖の設計" },
+  { key: "firstTenPages", label: "映画的フック：10ページの壁" },
+  { key: "realityCheck", label: "リアリティとロジックの検閲" },
+  { key: "structure", label: "構造分析：15ビートの黄金律" },
 ];
-
-function renderMentorRadar(scores) {
-  if (!mentorRadarSvg) return;
-  const cx = 110; const cy = 110; const r = 85; const n = 5;
-  const pts = (scale) => MENTOR_AXES.map((ax, i) => {
-    const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
-    const s = (Number(scores?.[ax.key]) || 0) / 100 * scale;
-    return [cx + r * s * Math.cos(angle), cy + r * s * Math.sin(angle)];
-  });
-
-  // Grid rings
-  let svg = "";
-  [0.25, 0.5, 0.75, 1].forEach((ring) => {
-    const p = pts(ring).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-    svg += `<polygon points="${p}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
-  });
-  // Axis lines
-  pts(1).forEach(([x, y]) => {
-    svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
-  });
-  // Score polygon
-  const scorePts = pts(1).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  svg += `<polygon points="${scorePts}" fill="rgba(229,9,20,0.25)" stroke="#e50914" stroke-width="1.5"/>`;
-  // Labels
-  const labelPts = MENTOR_AXES.map((ax, i) => {
-    const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
-    const lr = r + 22;
-    return { label: ax.label, x: cx + lr * Math.cos(angle), y: cy + lr * Math.sin(angle) };
-  });
-  labelPts.forEach(({ label, x, y }) => {
-    const anchor = x < cx - 4 ? "end" : x > cx + 4 ? "start" : "middle";
-    svg += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-size="9" fill="rgba(255,255,255,0.55)">${label}</text>`;
-  });
-
-  mentorRadarSvg.innerHTML = svg;
-}
-
-function getRiskLabel(risks, val) {
-  if (val >= 80) return { text: risks[3], cls: "risk-strong" };
-  if (val >= 65) return { text: risks[2], cls: "risk-ok" };
-  if (val >= 40) return { text: risks[1], cls: "risk-watch" };
-  return { text: risks[0], cls: "risk-danger" };
-}
 
 function renderMentorScores(scores) {
   if (!mentorScores) return;
-  mentorScores.innerHTML = MENTOR_AXES.map(({ key, label, risks }) => {
+  mentorScores.innerHTML = MENTOR_AXES.map(({ key, label }) => {
     const val = Number(scores?.[key]) || 0;
-    const { text: riskText, cls: riskCls } = getRiskLabel(risks, val);
-    const barCls = val >= 65 ? "" : val >= 40 ? "score-mid" : "score-low";
     return `<div class="mentor-score-item">
       <div class="mentor-score-header">
         <span class="mentor-score-label">${label}</span>
-        <span class="mentor-risk-label ${riskCls}">${riskText}</span>
+        <span class="mentor-score-value-plain">${val}</span>
       </div>
       <div class="mentor-score-bar-wrap">
-        <div class="mentor-score-bar-bg"><div class="mentor-score-bar-fill ${barCls}" style="width:${val}%"></div></div>
-        <span class="mentor-score-value">${val}</span>
+        <div class="mentor-score-bar-bg"><span class="mentor-score-pass-marker" aria-hidden="true"></span><div class="mentor-score-bar-fill" style="width:${val}%"></div></div>
       </div>
     </div>`;
   }).join("");
@@ -2370,9 +2330,14 @@ function renderMentorHighConcept(hc) {
     { label: "フック", key: "hook" },
     { label: "市場フィット", key: "marketFit" },
   ];
-  mentorHighConcept.innerHTML = items.map(({ label, key }) =>
+  const inner = items.map(({ label, key }) =>
     hc[key] ? `<div class="mentor-hc-item"><div class="mentor-hc-label">${label}</div><div class="mentor-hc-text">${escapeHtml(hc[key])}</div></div>` : "",
   ).join("");
+  if (!inner.trim()) {
+    mentorHighConcept.innerHTML = "";
+    return;
+  }
+  mentorHighConcept.innerHTML = `<div class="mentor-hc-panel"><div class="mentor-hc-grid">${inner}</div></div>`;
 }
 
 function renderMentorAnalyses(analyses, scores) {
@@ -2380,27 +2345,15 @@ function renderMentorAnalyses(analyses, scores) {
   mentorAnalyses.innerHTML = MENTOR_ANALYSIS_LABELS.map(({ key, label }) => {
     const val = Number(scores?.[key]) || 0;
     const text = analyses[key] || "";
-    return text ? `<div class="mentor-analysis-item">
-      <div class="mentor-analysis-header" role="button" tabindex="0" aria-expanded="false">
-        <span>${label}（${val}）</span>
-        <span class="mentor-analysis-toggle"></span>
-      </div>
-      <div class="mentor-analysis-body">${escapeHtml(text)}</div>
+    return text ? `<div class="mentor-analysis-flat">
+      <h4 class="mentor-analysis-flat-title">${escapeHtml(label)}（${val}）</h4>
+      <p class="mentor-analysis-flat-body">${escapeHtml(text)}</p>
     </div>` : "";
   }).join("");
-  mentorAnalyses.querySelectorAll(".mentor-analysis-header").forEach((header) => {
-    const toggle = () => {
-      const item = header.closest(".mentor-analysis-item");
-      const open = item.classList.toggle("open");
-      header.setAttribute("aria-expanded", open ? "true" : "false");
-    };
-    header.addEventListener("click", toggle);
-    header.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
-  });
 }
 
 function renderMentorBoxOffice(bo) {
-  if (!mentorBoxOffice || !bo) return;
+  if (!mentorBoxOffice) return;
   const items = [
     { label: "ターゲット層", key: "targetAudience" },
     { label: "年齢・性別", key: "ageGender" },
@@ -2408,44 +2361,65 @@ function renderMentorBoxOffice(bo) {
     { label: "世界展開可能性", key: "globalPotential" },
     { label: "想定興行規模", key: "estimatedScale" },
   ];
-  mentorBoxOffice.innerHTML = items.map(({ label, key }) =>
-    bo[key] ? `<div class="mentor-bo-item"><div class="mentor-bo-label">${label}</div><div class="mentor-bo-value">${escapeHtml(bo[key])}</div></div>` : "",
-  ).join("");
+  const html = bo
+    ? items.map(({ label, key }) =>
+        bo[key] ? `<div class="mentor-bo-item"><div class="mentor-bo-label">${label}</div><div class="mentor-bo-value">${escapeHtml(bo[key])}</div></div>` : "",
+      ).join("")
+    : "";
+  mentorBoxOffice.innerHTML = html;
+  if (mentorBoxOfficeSection) {
+    mentorBoxOfficeSection.classList.toggle("hidden", !html.trim());
+  }
 }
 
-function renderMentorVerdict(verdict, reason, priorities, firstFix, corePotential) {
-  if (mentorVerdictBlock) {
-    const cls = (verdict || "").toLowerCase();
-    mentorVerdictBlock.innerHTML = `
+function renderMentorVerdictLead(verdict, reason) {
+  if (!mentorVerdictBlock) return;
+  const cls = (verdict || "").toLowerCase();
+  const reasonTrim = (reason || "").trim();
+  mentorVerdictBlock.innerHTML = `
       <div class="mentor-verdict-badge ${cls}">${verdict || "—"}</div>
-      <p class="mentor-verdict-reason">${escapeHtml(reason || "")}</p>`;
+      <p class="mentor-verdict-reason mentor-verdict-lead${reasonTrim ? "" : " mentor-verdict-missing"}">${reasonTrim ? escapeHtml(reason) : "一言総評なし。再査定してください。"}</p>`;
+}
+
+function renderMentorFirstFixSlot(firstFix, verdict) {
+  if (!mentorFirstFix) return;
+  const fix = String(firstFix || "").trim();
+  if (fix) {
+    mentorFirstFix.classList.remove("mentor-firstfix-muted");
+    mentorFirstFix.innerHTML = `<p class="mentor-firstfix-text">${escapeHtml(fix)}</p>`;
+    return;
   }
-  // FIRST FIX: REWRITE判定時のみ表示
-  if (mentorFirstFix) {
-    const showFirstFix = verdict === "REWRITE" && firstFix;
-    mentorFirstFix.classList.toggle("hidden", !showFirstFix);
-    if (showFirstFix) {
-      mentorFirstFix.innerHTML = `
-        <div class="mentor-firstfix-label">FIRST FIX</div>
-        <p class="mentor-firstfix-text">${escapeHtml(firstFix)}</p>`;
-    }
+  mentorFirstFix.classList.add("mentor-firstfix-muted");
+  const msg =
+    verdict === "REWRITE"
+      ? "REWRITEなのに最初の一手が未出力です。同じ素材でもう一度査定してください。"
+      : "モデルが単一点の指示を出していません。詳細のスコアと想定詰問から論点を拾ってください。";
+  mentorFirstFix.innerHTML = `<p class="mentor-firstfix-empty">${escapeHtml(msg)}</p>`;
+}
+
+function renderMentorCorePotential(corePotential) {
+  if (!mentorCorePotential) return;
+  const text = String(corePotential || "").trim();
+  mentorCorePotential.classList.toggle("hidden", !text);
+  if (!text) return;
+  mentorCorePotential.innerHTML = `
+        <p class="mentor-core-plain-heading">残る核</p>
+        <p class="mentor-core-potential-text">${escapeHtml(text)}</p>`;
+}
+
+function renderMentorPriorities(priorities) {
+  if (!mentorPriorities) return;
+  const list = Array.isArray(priorities) ? priorities.filter(Boolean) : [];
+  mentorPrioritiesWrap?.classList.toggle("hidden", !list.length);
+  if (!list.length) {
+    mentorPriorities.innerHTML = "";
+    mentorPriorities.classList.add("hidden");
+    return;
   }
-  if (mentorPriorities && Array.isArray(priorities) && priorities.length) {
-    mentorPriorities.innerHTML = `<p class="mentor-priorities-label">改善可能な事項</p>` +
-      priorities.map((p, i) =>
-        `<div class="mentor-priority-item"><span class="mentor-priority-num">${i + 1}</span><span>${escapeHtml(p)}</span></div>`,
-      ).join("");
-  }
-  // CORE POTENTIAL: 必ず表示
-  if (mentorCorePotential) {
-    const show = !!corePotential;
-    mentorCorePotential.classList.toggle("hidden", !show);
-    if (show) {
-      mentorCorePotential.innerHTML = `
-        <div class="mentor-core-potential-label">CORE POTENTIAL</div>
-        <p class="mentor-core-potential-text">${escapeHtml(corePotential)}</p>`;
-    }
-  }
+  mentorPriorities.classList.remove("hidden");
+  mentorPriorities.innerHTML = list.map((p, i) =>
+    `<div class="mentor-priority-item"><span class="mentor-priority-num">${i + 1}</span><span>${escapeHtml(p)}</span></div>`,
+  ).join("");
 }
 
 function renderMentorSourceText(text, isHistory) {
@@ -2458,7 +2432,7 @@ function renderMentorSourceText(text, isHistory) {
   mentorSourceText.classList.remove("hidden");
   mentorSourceText.innerHTML = `
     <details class="mentor-source-details">
-      <summary class="mentor-source-summary">元企画テキスト</summary>
+      <summary class="mentor-source-summary mentor-disclosure-chevron"><span class="mentor-source-summary-label">元企画テキスト</span></summary>
       <pre class="mentor-source-pre">${escapeHtml(text)}</pre>
     </details>`;
 }
@@ -2467,53 +2441,63 @@ function renderMentorHorrorGlobalFit(hgf) {
   if (!mentorHorrorGlobalFit) return;
   if (!hgf) { mentorHorrorGlobalFit.innerHTML = ""; return; }
 
-  const lockLevelCls = { HIGH: "lock-high", MEDIUM: "lock-medium", LOW: "lock-low" }[hgf.culturalLockRisk?.level] || "lock-medium";
-  const lockLabel = { HIGH: "HIGH RISK", MEDIUM: "MEDIUM", LOW: "LOW RISK" }[hgf.culturalLockRisk?.level] || "MEDIUM";
+  const row = (titleJa, rightHtml, bodyHtml) =>
+    `<div class="mentor-hgf-block">
+      <div class="mentor-hgf-row">
+        <span class="mentor-hgf-title">${escapeHtml(titleJa)}</span>
+        ${rightHtml}
+      </div>
+      <div class="mentor-hgf-body">${bodyHtml}</div>
+    </div>`;
+
+  const scoreTxt = (score) => {
+    const hasNum = score !== null && score !== undefined && Number.isFinite(Number(score));
+    return hasNum ? String(Number(score)) : "—";
+  };
 
   const scoreAxes = [
-    { key: "globalHook",        label: "GLOBAL HOOK",         score: hgf.globalHook?.score,        text: hgf.globalHook?.text },
-    { key: "imagePower",        label: "IMAGE POWER",         score: hgf.imagePower?.score,         text: hgf.imagePower?.text },
-    { key: "titleExportability",label: "TITLE EXPORTABILITY", score: hgf.titleExportability?.score, text: hgf.titleExportability?.text },
+    { ja: "海外フック", score: hgf.globalHook?.score, text: hgf.globalHook?.text },
+    { ja: "ポスター力", score: hgf.imagePower?.score, text: hgf.imagePower?.text },
+    { ja: "海外タイトル輸出力", score: hgf.titleExportability?.score, text: hgf.titleExportability?.text },
   ];
 
-  const scorePart = scoreAxes.map(({ label, score, text }) => {
-    const s = Number(score) || 0;
-    const cls = s >= 70 ? "hgf-ok" : s >= 50 ? "hgf-watch" : "hgf-danger";
-    return `<div class="mentor-hgf-item">
-      <div class="mentor-hgf-header">
-        <span class="mentor-hgf-label">${label}</span>
-        <span class="mentor-hgf-score ${cls}">${s}</span>
-      </div>
-      ${text ? `<p class="mentor-hgf-text">${escapeHtml(text)}</p>` : ""}
-    </div>`;
+  const scorePart = scoreAxes.map(({ ja, score, text }) => {
+    const body = text
+      ? `<p class="mentor-hgf-text">${escapeHtml(text)}</p>`
+      : `<p class="mentor-hgf-text mentor-hgf-missing">説明テキスト未取得</p>`;
+    return row(ja, `<span class="mentor-hgf-num">${escapeHtml(scoreTxt(score))}</span>`, body);
   }).join("");
 
-  const uniquePart = hgf.uniqueDread?.text ? `<div class="mentor-hgf-item">
-    <div class="mentor-hgf-header"><span class="mentor-hgf-label">UNIQUE DREAD</span></div>
-    <p class="mentor-hgf-text">${escapeHtml(hgf.uniqueDread.text)}</p>
-  </div>` : "";
+  const dreadText = hgf.uniqueDread?.text || "";
+  const uniquePart = row(
+    "企画固有の嫌さ",
+    "",
+    dreadText ? `<p class="mentor-hgf-text">${escapeHtml(dreadText)}</p>` : `<p class="mentor-hgf-text mentor-hgf-missing">未取得</p>`,
+  );
 
-  const lockPart = hgf.culturalLockRisk?.text ? `<div class="mentor-hgf-item">
-    <div class="mentor-hgf-header">
-      <span class="mentor-hgf-label">CULTURAL LOCK RISK</span>
-      <span class="mentor-hgf-lock ${lockLevelCls}">${lockLabel}</span>
-    </div>
-    <p class="mentor-hgf-text">${escapeHtml(hgf.culturalLockRisk.text)}</p>
-  </div>` : "";
+  const clr = hgf.culturalLockRisk || {};
+  const lockLabel = { HIGH: "高", MEDIUM: "中", LOW: "低" }[clr.level] || "中";
+  const lockBody = clr.text
+    ? `<p class="mentor-hgf-text">${escapeHtml(clr.text)}</p>`
+    : `<p class="mentor-hgf-text mentor-hgf-missing">説明テキスト未取得</p>`;
+  const lockPart = row(
+    "海外文化依存リスク",
+    `<span class="mentor-hgf-num">${escapeHtml(lockLabel)}</span>`,
+    lockBody,
+  );
 
-  mentorHorrorGlobalFit.innerHTML = scorePart + uniquePart + lockPart;
+  mentorHorrorGlobalFit.innerHTML = `<div class="mentor-hgf-stack">${scorePart}${uniquePart}${lockPart}</div>`;
 }
 
 function renderMentorCriticalIssues(items) {
   if (!mentorCriticalIssues) return;
-  if (!Array.isArray(items) || !items.length) {
+  const top = Array.isArray(items) ? items.slice(0, 1) : [];
+  if (!top.length) {
     mentorCriticalIssues.classList.add("hidden");
     return;
   }
   mentorCriticalIssues.classList.remove("hidden");
-  mentorCriticalIssues.innerHTML =
-    `<div class="mentor-critical-header">CRITICAL ISSUE</div>` +
-    items.map((item) => `
+  mentorCriticalIssues.innerHTML = top.map((item) => `
       <div class="mentor-critical-item">
         <p class="mentor-critical-issue-text">${escapeHtml(item.issue)}</p>
         ${item.direction ? `<p class="mentor-critical-direction">${escapeHtml(item.direction)}</p>` : ""}
@@ -2522,20 +2506,21 @@ function renderMentorCriticalIssues(items) {
 
 function renderMentorInterrogations(items) {
   if (!mentorInterrogations) return;
-  if (!Array.isArray(items) || !items.length) {
+  const top = (Array.isArray(items) ? items : []).slice(0, 3);
+  if (!top.length) {
     mentorInterrogations.innerHTML = "";
+    if (mentorInterrogationsSection) mentorInterrogationsSection.classList.add("hidden");
     return;
   }
-  mentorInterrogations.innerHTML = items.map((item, i) => {
-    const typeCls = (item.type || "").toLowerCase().replace(/\s+/g, "-");
+  if (mentorInterrogationsSection) mentorInterrogationsSection.classList.remove("hidden");
+  mentorInterrogations.innerHTML = top.map((item) => {
+    const role = item.type ? `<p class="mentor-interrogation-role">${escapeHtml(item.type)}</p>` : "";
+    const reason = item.reason ? `<p class="mentor-interrogation-reason-inline">${escapeHtml(item.reason)}</p>` : "";
     return `
     <div class="mentor-interrogation-item">
-      <div class="mentor-interrogation-q">
-        <span class="mentor-interrogation-num">Q${i + 1}</span>
-        ${item.type ? `<span class="mentor-interrogation-type ${typeCls}">${escapeHtml(item.type)}</span>` : ""}
-        <span class="mentor-interrogation-text">${escapeHtml(item.question)}</span>
-      </div>
-      ${item.reason ? `<div class="mentor-interrogation-reason">${escapeHtml(item.reason)}</div>` : ""}
+      ${role}
+      <p class="mentor-interrogation-text-only">${escapeHtml(item.question)}</p>
+      ${reason}
     </div>`;
   }).join("");
 }

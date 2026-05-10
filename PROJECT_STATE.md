@@ -76,9 +76,9 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 - ロゴは現在 `logo.svg` をPC/SPビューに使い、faviconは `favicon.svg` を使う
 - ブックマークレットから作品ページを追加
 - JSONバックアップの書き出し、読み込み
-- Analyze画面の初期状態はManual / Script / Videoの3ルートボタンと保存済みAnalyzeカードのみ
-- Manual / Script / Video開始ボタンはDiscoverのAdd Movieと同じ上部アクション位置に配置する
-- Analyze一覧はDiscoverと同じく、すべて/Manual/Script/Videoフィルター、検索、並び順を上部に配置する
+- Analyze画面の初期状態はManual / Scriptの2ルートボタンと保存済みAnalyzeカードのみ
+- Manual / Script開始ボタンはDiscoverのAdd Movieと同じ上部アクション位置に配置する
+- Analyze一覧はDiscoverと同じく、すべて/Script/Manualフィルター、検索、並び順を上部に配置する
 - Discover/Analyzeのデフォルト表示と上部ヘッダーは静的HTMLとして保持し、タブ切り替えでは該当パネルの表示だけを切り替える
 - 機能タブ切り替え時は、表示されるヘッダーとパネルに軽いフェード/スライドの入場アニメーションを付ける
 - 映画カード、Analyzeカード、Manualビート入力、Analyze詳細ビートはHTML templateを使い、データ部分だけJSで描画する
@@ -89,13 +89,19 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 - 保存済みAnalyzeカードはカード全体クリックでDiscover詳細と同じ全画面詳細を表示。詳細下部に編集と削除を配置し、編集は通常モーダルで行う
 - Scriptは映画タイトルによる外部脚本DB取得、または脚本ファイルの選択/ドラッグ&ドロップアップロードからGemini解析する構成
 - ScriptモードではManual用のruntime、ログライン入力、AIログライン生成ボタンは表示しない。タイトル欄は脚本DB検索用として使い、ファイル解析時はファイル名からタイトルを補完できる
-- Scriptファイルが選択されている場合はアップロード脚本を優先し、未選択の場合は映画タイトルで脚本DB取得を試す
-- Scriptの外部脚本DB取得はIMSDbのURL候補を試し、取得できない場合は脚本ファイルアップロードを促す
+- Script DBモードではタイトル検索からTMDb候補を出し、選択した作品の原題・年も使って脚本DB検索を行う
+- Script DB取得は `/api/analyze/script-db/fetch` で実行し、取得した脚本本文は一時セッションIDで保持する。ユーザー確認後に `/api/analyze/start` へ渡してGemini抽出する
+- Script DBの外部取得は ScriptSlug / IMSDb / DailyScript の順に候補URLを試し、HTML/TXT/PDFから本文抽出する
+- Script DB取得に失敗した場合は、脚本ファイルアップロードへ誘導する
+- Script Uploadモードではファイルを `/api/analyze/upload` に送信し、抽出されたテキストをGemini解析へ渡す
 - Scriptアップロードは `.txt/.md/.fountain/.fdx/.rtf/.pdf/.docx/.pptx` を対象に、テキスト抽出後にAnalyzeへ渡す（スキャンPDF/OCRは対象外）
-- Videoはモーダル登録UIまで用意済み。yt-dlp、Gemini動画解析の本接続は次段階
-- Mentorは左ナビ、静的ヘッダー、空のプレースホルダーのみ先行実装。脚本査定UIとGemini連携は次段階で詰める
-- Gemini API連携基盤。Analyze抽出は `/api/analyze/extract`、Analyzeログライン生成は `/api/analyze/logline`、Mentor査定は `/api/gemini/mentor` のPOSTエンドポイント
+- Videoルートは現行UIから一旦外している。yt-dlp、Gemini動画解析は次段階
+- Mentorは履歴リスト、GO/REWRITE/PASSフィルター、検索、並び順、新規査定モーダル、詳細フルスクリーン表示、削除を実装済み
+- Mentorはテキスト入力またはファイルアップロードから `/api/mentor/analyze` でGemini査定し、履歴をlocalStorageに保存する
+- Mentor詳細は判定、理由、重大課題、最初に直す一点、想定詰問、5軸スコア、ハイコンセプト分析、ホラー/グローバル適性、興行シミュレーション、コアポテンシャル、書き直し優先順位を表示する
+- Gemini API連携基盤。Analyze抽出は `/api/analyze/extract` / `/api/analyze/start`、Analyzeログライン生成は `/api/analyze/logline`、Mentor査定は `/api/mentor/analyze` のPOSTエンドポイント
 - `/api/analyze/extract` は脚本テキストまたは動画解析データから15ビートを抽出し、各ビートに `theory`（上映時間から算出した理論タイム）と `actual`（Geminiが抽出した実測タイム・要約）を並べて返す
+- Gemini利用回数は `/api/gemini-usage` で取得し、Analyze / Mentor 別に本日使用回数と上限をUI表示する
 - PWA用manifestとservice worker
 
 ## データ保存
@@ -104,7 +110,9 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 
 - 映画リスト: `movie-shelf-items`（互換維持のため旧キー名を利用）
 - 15ビート逆箱: `reverse-beats`
+- Mentor履歴: `mentor-history`
 - 最後に開いていたタブ: `current-tab`
+- Gemini日次利用回数: `.gemini-usage.json`（ローカルファイル。Git管理しない）
 
 書き出しファイルは `movie-shelf-backup-YYYYMMDD.json`（互換維持のため旧接頭辞）。
 現在は映画リストと15ビート逆箱の両方を含む。
@@ -116,7 +124,9 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 - `server.js` の映画情報取得はTMDb APIを優先し、失敗または未ヒット時だけHTMLメタデータ/JSON-LDの簡易抽出へフォールバックする
 - タイトル検索はTMDb `search/movie` を優先し、未ヒット時だけ映画.comの検索結果から作品ページ候補を見つける
 - TMDb APIキーは `TMDB_API_KEY` 環境変数を優先し、未設定時はアプリ内のデフォルトキーを使う
-- Gemini APIキーは `.env` または環境変数の `GEMINI_API_KEY` でサーバー側に設定する。`.env.example` に `GEMINI_MODEL`、`GEMINI_ANALYZE_MODEL`、`GEMINI_MENTOR_MODEL` の雛形あり
+- Gemini は **Analyze** と **Mentor** で API キーを分離（`.env` の `GEMINI_ANALYZE_API_KEY` / `GEMINI_MENTOR_API_KEY`、フォールバックなし）。無料枠の1キー20回制限を避けるため、Analyzeの脚本分析リクエストとMentorの分析リクエストは別キーで運用する
+- Geminiの日次ローカルカウント上限も用途別（既定各 20、`GEMINI_ANALYZE_DAILY_LIMIT` / `GEMINI_MENTOR_DAILY_LIMIT`）。`.env.example` を参照
+- `.env` はローカル秘密情報として扱い、APIキー値はドキュメントやGitに記載しない
 - GeminiクライアントはAnalyze/Mentor用途別に初期化し、将来モデルを使い分けられる
 - Analyze用Gemini System Instructionは人格・感想・助言を排除したデータ抽出専用。出力はJSONのみで、後続のドラムロールピッカーが理論値と実測値のズレを扱える構造にする
 - 15ビート理論タイムは `server.js` の `ANALYZE_BEAT_TEMPLATE` の `ratio` を正として計算する。オープニングは0.01、第一ターニングポイントは0.25、ミッドポイントは0.5、フィナーレは0.95
@@ -128,7 +138,7 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 - 作品ページURL入力は追加フォーム最上部。取得できないサイトではURLを保存し、タイトルなどは手入力する
 - 映画リスト上部の集計カードは通常UIから削除済み
 - 書き出し、読み込み、ブックマークレットコピーは機能コードのみ残し、通常UIからは外している
-- 左ナビはDiscoverとAnalyzeのみ。Settingsと左下ユーザー表示は通常UIから削除済み
+- 左ナビはDiscover / Analyze / Mentor。Settingsと左下ユーザー表示は通常UIから削除済み
 - Discover上部の映画検索と追加ボタンはAnalyze画面では表示しない
 - 削除確認はブラウザ標準confirmではなく、アプリ内モーダルで表示する
 - service workerのキャッシュ名は `n-script-v5`。ロゴ変更など静的資産更新時はキャッシュ名も更新する

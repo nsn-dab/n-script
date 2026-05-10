@@ -53,7 +53,9 @@ Optional but recommended:
 ## 4) Environment Variables (Render)
 
 - [ ] `TMDB_API_KEY`
-- [ ] `GEMINI_API_KEY`
+- [ ] `GEMINI_ANALYZE_API_KEY`
+- [ ] `GEMINI_MENTOR_API_KEY`
+- [ ] `GEMINI_ANALYZE_DAILY_LIMIT` / `GEMINI_MENTOR_DAILY_LIMIT` (optional, default 20 each)
 - [ ] `GEMINI_MODEL` (optional override)
 - [ ] `GEMINI_ANALYZE_MODEL` (optional override)
 - [ ] `GEMINI_MENTOR_MODEL` (optional override)
@@ -113,7 +115,7 @@ Notes:
 
 ### 500 errors on AI endpoints
 
-- Re-check Render environment variables (`GEMINI_API_KEY`, model vars).
+- Re-check Render environment variables (`GEMINI_ANALYZE_API_KEY`, `GEMINI_MENTOR_API_KEY`, model vars).
 
 ### Upload fails on office files
 

@@ -49,7 +49,7 @@
           <div class="topbar-panel" data-header="movies">
             <div>
               <h1>Discover</h1>
-              <p class="page-subtitle">心がときめく映画を一緒に見つけよう。</p>
+              <p class="page-subtitle">執筆・開発の参照棚。気になる作品をストックして、カルテとして読み返す。</p>
             </div>
             <div class="top-actions">
               <button class="primary-button list-add-button" id="openFormButton" type="button"><span aria-hidden="true">＋</span> Add Movie</button>
@@ -58,7 +58,7 @@
           <div class="topbar-panel hidden" data-header="reverse">
             <div>
               <h1>Analyze</h1>
-              <p class="page-subtitle">映画構造を15ビートで解析し、テンポのズレを可視化しよう。</p>
+              <p class="page-subtitle">15ビート比による構造アーカイブ。テンポのズレを記録し、改稿の参照にする。</p>
             </div>
             <div class="top-actions analyze-top-actions" aria-label="Analyze source type">
               <button class="primary-button analyze-route-button" type="button" data-analyze-source="script"><span aria-hidden="true">＋</span> Script</button>
@@ -71,7 +71,7 @@
               <p class="page-subtitle">企画開発DB。ライターズルーム前の防衛記録。</p>
             </div>
             <div class="top-actions">
-              <button class="primary-button" id="mentorNewReviewButton" type="button"><span aria-hidden="true">＋</span> New Review</button>
+              <button class="primary-button" id="mentorNewReviewButton" type="button"><span aria-hidden="true">＋</span> 新規レビュー</button>
             </div>
           </div>
         </header>
@@ -129,7 +129,7 @@
             <div class="detail-heading">
               <button class="detail-back-button" id="closeDetailButton" type="button">
                 <span aria-hidden="true">←</span>
-                戻る
+                一覧へ
               </button>
             </div>
             <div class="detail-content">
@@ -288,7 +288,7 @@
             </div>
 
             <div class="movie-list" id="movieList" aria-live="polite"></div>
-            <p class="empty-state hidden" id="emptyState">条件に合う映画がありません。</p>
+            <p class="empty-state hidden" id="emptyState">条件に合う記録がありません。フィルタを変えるか、作品を追加してください。</p>
             <div class="empty-actions hidden" id="emptyStateActions">
               <button class="ghost-button" id="clearMovieFiltersButton" type="button">フィルタを解除</button>
               <button class="primary-button" id="emptyAddMovieButton" type="button">Add Movie</button>
@@ -309,7 +309,7 @@
                     <circle cx="10.7" cy="10.7" r="6.2" />
                     <path d="m15.25 15.25 4.25 4.25" />
                   </svg>
-                  <input id="analyzeSearchInput" type="search" placeholder="Analyzeを検索…" />
+                  <input id="analyzeSearchInput" type="search" placeholder="構造記録を検索…" />
                 </label>
                 <label class="sort-box">
                   <svg class="sort-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -327,7 +327,7 @@
               </div>
             </div>
             <div class="reverse-list analyze-beat-list" id="reverseList" aria-live="polite"></div>
-            <p class="empty-state hidden" id="reverseEmptyState">Analyzeデータがありません。上のルートから開始してください。</p>
+            <p class="empty-state hidden" id="reverseEmptyState">構造記録がありません。Script または Manual から抽出を開始してください。</p>
           </section>
 
           <section class="list-panel tab-panel hidden" id="mentorPanel" data-tab="mentor" aria-label="Mentor">
@@ -336,11 +336,11 @@
             <div id="mentorListView">
               <div class="tool-row mentor-filter-row">
                 <div class="filter-pills" aria-label="Mentor filters">
-                  <button class="filter-pill filter-pill-active" type="button" data-mentor-filter="all">All <span id="allMentorCount">0</span></button>
+                  <button class="filter-pill filter-pill-active" type="button" data-mentor-filter="all">すべて <span id="allMentorCount">0</span></button>
                   <button class="filter-pill" type="button" data-mentor-filter="go">GO <span id="goMentorCount">0</span></button>
                   <button class="filter-pill" type="button" data-mentor-filter="rewrite">REWRITE <span id="rewriteMentorCount">0</span></button>
                   <button class="filter-pill" type="button" data-mentor-filter="pass">PASS <span id="passMentorCount">0</span></button>
-                  <button class="filter-pill" type="button" data-mentor-filter="high-risk">HIGH RISK</button>
+                  <button class="filter-pill" type="button" data-mentor-filter="high-risk">高リスク</button>
                 </div>
                 <div class="filter-tools">
                   <label class="search-box">
@@ -360,18 +360,18 @@
                       <path d="M14 18h2" />
                     </svg>
                     <select id="mentorSortSelect" aria-label="レビューの並び順">
-                      <option value="newest">Newest</option>
-                      <option value="oldest">Oldest</option>
-                      <option value="most-critical">Most Critical</option>
+                      <option value="newest">新しい順</option>
+                      <option value="oldest">古い順</option>
+                      <option value="most-critical">危険度順（低スコア先頭）</option>
                     </select>
                   </label>
                 </div>
               </div>
               <div class="mentor-card-list" id="mentorCardList" aria-live="polite"></div>
               <div class="mentor-empty-state hidden" id="mentorEmptyState">
-                <p class="mentor-empty-title">まだMentorレビューはありません。</p>
-                <p class="mentor-empty-desc">企画を入力して、ライターズルーム前の防衛レビューを開始してください。</p>
-                <button class="primary-button" id="mentorEmptyNewButton" type="button">＋ New Review</button>
+                <p class="mentor-empty-title">査定記録はまだありません。</p>
+                <p class="mentor-empty-desc">企画テキストまたはファイルを渡し、ライターズルーム前の査定レポートを残してください。</p>
+                <button class="primary-button" id="mentorEmptyNewButton" type="button">＋ 査定を開始</button>
               </div>
             </div>
 
@@ -381,7 +381,7 @@
             <div class="detail-heading">
               <button class="detail-back-button" id="closeAnalyzeDetailButton" type="button">
                 <span aria-hidden="true">←</span>
-                戻る
+                一覧へ
               </button>
             </div>
             <div class="detail-content analyze-detail-content">
@@ -413,12 +413,12 @@
               <div class="analyze-dialog-busy-inner">
                 <div class="analyze-busy-spinner" aria-hidden="true"></div>
                 <p class="analyze-busy-label" id="analyzeDialogBusyLabel">検索中・・・</p>
-                <p class="analyze-busy-hint hidden" id="analyzeDialogBusyHint">解析完了まで約45秒ほどかかります。しばらくお待ちください。</p>
+                <p class="analyze-busy-hint hidden" id="analyzeDialogBusyHint">構造の抽出は時間がかかることがあります（目安45秒前後）。このままお待ちください。</p>
                 <p class="analyze-busy-elapsed hidden" id="analyzeDialogBusyElapsed"><span id="analyzeElapsedSeconds">0</span> 秒経過</p>
               </div>
             </div>
             <div class="analyze-complete-panel hidden" id="analyzeCompletePanel">
-              <p class="analyze-complete-message">解析が完了しました。リストをご確認ください。</p>
+              <p class="analyze-complete-message">構造記録を保存し、一覧に反映しました。</p>
               <button class="primary-button" type="button" id="analyzeCompleteOkButton">OK</button>
             </div>
             <div class="candidate-heading">
@@ -430,7 +430,7 @@
                 <span aria-hidden="true">×</span>
               </button>
             </div>
-            <div class="gemini-usage-bar hidden" id="geminiUsageBar" aria-label="Gemini API使用状況">
+            <div class="gemini-usage-bar hidden" id="geminiUsageBar" aria-label="Gemini API 本日利用回数（Analyze と Mentor を別枠）">
               <span id="geminiUsageText">Gemini 0 / 20 today</span>
               <span class="gemini-usage-reset" id="geminiUsageReset"></span>
             </div>
@@ -451,7 +451,7 @@
                   </div>
                 </label>
                 <label id="analyzeRuntimeField">
-                  runtime
+                  上映時間（分）
                   <input id="analyzeRuntimeInput" name="analyzeRuntime" type="number" min="1" step="1" placeholder="例: 95" />
                 </label>
               </div>
@@ -459,7 +459,7 @@
                 <p class="script-db-confirm-label">脚本が見つかりました</p>
                 <p class="script-db-confirm-title" id="scriptDbConfirmTitleText"></p>
                 <div class="script-db-confirm-footer">
-                  <p class="script-db-confirm-question">解析を開始しますか？</p>
+                  <p class="script-db-confirm-question">構造の抽出を開始しますか？</p>
                   <div class="script-db-confirm-actions">
                     <button class="primary-button" type="button" id="scriptDbConfirmStartButton">開始</button>
                     <button class="ghost-button" type="button" id="scriptDbConfirmCancelButton">キャンセル</button>
@@ -504,55 +504,77 @@
             <div class="detail-heading">
               <button class="detail-back-button" id="mentorBackButton" type="button">
                 <span aria-hidden="true">←</span>
-                Reviews
+                一覧へ
               </button>
+              <button class="ghost-button danger-button detail-heading-action" id="mentorDetailDeleteButton" type="button">削除する</button>
             </div>
             <div class="mentor-detail-dialog-body">
               <div class="mentor-results" id="mentorResults">
-                <div class="mentor-results-header">
-                  <p class="mentor-results-title-label">解析対象</p>
-                  <h2 class="mentor-results-title" id="mentorResultsTitle" id="mentorDetailTitle">—</h2>
-                </div>
-
-                <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
-                <div class="mentor-source-text hidden" id="mentorSourceText"></div>
-
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">① 分析レポート</h3>
-                  <div class="mentor-radar-row">
-                    <div class="mentor-radar-wrap">
-                      <svg class="mentor-radar-svg" id="mentorRadarSvg" viewBox="0 0 220 220" aria-hidden="true"></svg>
-                      <div class="mentor-radar-labels" id="mentorRadarLabels"></div>
-                    </div>
-                    <div class="mentor-scores" id="mentorScores"></div>
+                <div class="mentor-results-preamble">
+                  <div class="mentor-results-header">
+                    <p class="mentor-results-title-label">査定対象</p>
+                    <h2 class="mentor-results-title" id="mentorDetailTitle">—</h2>
                   </div>
-                  <div class="mentor-high-concept" id="mentorHighConcept"></div>
-                  <div class="mentor-analyses" id="mentorAnalyses"></div>
+                  <div class="mentor-source-text hidden" id="mentorSourceText"></div>
                 </div>
 
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">② HORROR / GLOBAL FIT</h3>
-                  <div class="mentor-horror-global-fit" id="mentorHorrorGlobalFit"></div>
-                </div>
+                <section class="mentor-block mentor-block-verdict" aria-label="判定">
+                  <span class="mentor-step-index" aria-hidden="true">01</span>
+                  <div class="mentor-block-main">
+                    <h3 class="mentor-block-title">判定</h3>
+                    <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
+                  </div>
+                </section>
 
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">③ 興行シミュレーション</h3>
-                  <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
-                </div>
+                <section class="mentor-block mentor-block-critical" aria-label="最重要問題">
+                  <span class="mentor-step-index" aria-hidden="true">02</span>
+                  <div class="mentor-block-main">
+                    <h3 class="mentor-block-title">致命的論点</h3>
+                    <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
+                  </div>
+                </section>
 
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">④ 想定詰問</h3>
-                  <p class="mentor-interrogation-intro">企画会議・ライターズルームで飛んでくる弾。事前に回答を用意してください。</p>
-                  <div class="mentor-interrogations" id="mentorInterrogations"></div>
-                </div>
+                <section class="mentor-block mentor-block-firstfix" aria-label="最初の一手">
+                  <span class="mentor-step-index" aria-hidden="true">03</span>
+                  <div class="mentor-block-main">
+                    <h3 class="mentor-block-title">最初に直す一点</h3>
+                    <div class="mentor-firstfix mentor-firstfix-slot" id="mentorFirstFix"></div>
+                  </div>
+                </section>
 
-                <div class="mentor-section">
-                  <h3 class="mentor-section-heading">⑤ 最終判定</h3>
-                  <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
-                  <div class="mentor-firstfix hidden" id="mentorFirstFix"></div>
-                  <div class="mentor-priorities" id="mentorPriorities"></div>
-                  <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
-                </div>
+                <section class="mentor-block mentor-block-interrogations" id="mentorInterrogationsSection" aria-label="想定詰問">
+                  <span class="mentor-step-index" aria-hidden="true">04</span>
+                  <div class="mentor-block-main">
+                    <h3 class="mentor-block-title">想定詰問</h3>
+                    <div class="mentor-interrogations" id="mentorInterrogations"></div>
+                  </div>
+                </section>
+
+                <section class="mentor-block mentor-block-deep-dive" aria-label="詳細分析">
+                  <span class="mentor-step-index" aria-hidden="true">05</span>
+                  <div class="mentor-block-main">
+                    <details class="mentor-deep-dive">
+                      <summary class="mentor-deep-dive-summary">
+                        <span class="mentor-deep-dive-title">詳細分析</span>
+                      </summary>
+                      <div class="mentor-deep-dive-body">
+                        <div class="mentor-deep-scores-wrap">
+                          <div class="mentor-scores" id="mentorScores"></div>
+                        </div>
+                        <div class="mentor-high-concept" id="mentorHighConcept"></div>
+                        <div class="mentor-analyses" id="mentorAnalyses"></div>
+                        <div class="mentor-horror-global-fit" id="mentorHorrorGlobalFit"></div>
+                        <div class="mentor-deep-block hidden" id="mentorBoxOfficeSection">
+                          <div class="mentor-boxoffice" id="mentorBoxOffice"></div>
+                        </div>
+                        <div class="mentor-core-potential hidden" id="mentorCorePotential"></div>
+                        <div class="mentor-priorities-wrap hidden" id="mentorPrioritiesWrap">
+                          <div class="mentor-priorities" id="mentorPriorities"></div>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </section>
               </div>
             </div>
           </section>
@@ -561,7 +583,7 @@
           <section class="mentor-modal hidden" id="mentorModal" role="dialog" aria-modal="true" aria-labelledby="mentorModalTitle">
             <div class="mentor-modal-header">
               <div>
-                <h2 id="mentorModalTitle">New Review</h2>
+                <h2 id="mentorModalTitle">新規レビュー</h2>
                 <p class="meta-line">企画を戦場に出す前の防衛レビューを開始する</p>
               </div>
               <button class="icon-button close-button" id="closeMentorModalButton" type="button" title="閉じる" aria-label="閉じる">
@@ -569,6 +591,7 @@
               </button>
             </div>
 
+            <div class="mentor-modal-body">
             <div id="mentorInputSection">
               <div class="mentor-mode-toggle" id="mentorModeToggle" aria-label="入力モード">
                 <button class="filter-pill filter-pill-active" type="button" data-mentor-mode="text">テキスト入力</button>
@@ -579,7 +602,7 @@
                 <label class="mentor-label" for="mentorTitleInput">タイトル（任意）</label>
                 <input class="text-input mentor-title-input" id="mentorTitleInput" type="text" placeholder="例：ザ・リング、オリジナル企画タイトル">
                 <label class="mentor-label" for="mentorTextInput">企画テキスト</label>
-                <textarea class="mentor-textarea" id="mentorTextInput" placeholder="ログライン、プロット、treatment、箱書き、企画書、アイデアメモなど。数行でも解析できます。" rows="10"></textarea>
+                <textarea class="mentor-textarea" id="mentorTextInput" placeholder="ログライン、プロット、treatment、箱書き、企画書、アイデアメモなど。短い素材でも査定できます。" rows="10"></textarea>
               </div>
 
               <div id="mentorFileArea" class="hidden">
@@ -593,14 +616,15 @@
               </div>
 
               <p class="mentor-status hidden" id="mentorStatus" aria-live="polite"></p>
-              <button class="primary-button mentor-analyze-button" id="mentorAnalyzeButton" type="button">分析開始</button>
+              <button class="primary-button mentor-analyze-button" id="mentorAnalyzeButton" type="button">査定開始</button>
             </div>
 
             <div class="mentor-busy hidden" id="mentorBusy" aria-hidden="true">
               <div class="analyze-busy-spinner" aria-hidden="true"></div>
-              <p>企画を分析中・・・</p>
-              <p class="mentor-busy-hint">分析完了まで約30〜60秒ほどかかります。しばらくお待ちください。</p>
+              <p>査定を実行中です…</p>
+              <p class="mentor-busy-hint">査定処理に数十秒かかることがあります。このままお待ちください。</p>
             </div>
+            </div><!-- /.mentor-modal-body -->
           </section>
 
         </section>

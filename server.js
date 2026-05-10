@@ -16,10 +16,14 @@ const MAX_HTML_BYTES = 2_000_000;
 const TMDB_API_KEY = process.env.TMDB_API_KEY || "319d2750f37dd5ce55ad5a38afff96ff";
 const TMDB_API_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500/";
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+/** Analyze 系のみ（フォールバックなし・未設定時はリクエスト失敗） */
+const GEMINI_ANALYZE_API_KEY_EFFECTIVE = cleanText(process.env.GEMINI_ANALYZE_API_KEY || "");
+/** Mentor 系のみ（フォールバックなし・未設定時はリクエスト失敗） */
+const GEMINI_MENTOR_API_KEY_EFFECTIVE = cleanText(process.env.GEMINI_MENTOR_API_KEY || "");
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const geminiClients = initializeGeminiClients({
-  apiKey: GEMINI_API_KEY,
+  analyzeApiKey: GEMINI_ANALYZE_API_KEY_EFFECTIVE,
+  mentorApiKey: GEMINI_MENTOR_API_KEY_EFFECTIVE,
   defaultModel: process.env.GEMINI_MODEL || "gemini-2.5-flash",
   models: {
     analyze: process.env.GEMINI_ANALYZE_MODEL,
@@ -118,7 +122,15 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`N Script is running at http://localhost:${PORT}/index.html`);
-  console.log(`Using Gemini model: ${process.env.GEMINI_MODEL || "gemini-2.5-flash"} (analyze: ${process.env.GEMINI_ANALYZE_MODEL || "gemini-2.5-flash"}, mentor: ${process.env.GEMINI_MENTOR_MODEL || "gemini-2.5-flash"})`);
+  const defaultModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const analyzeModel = process.env.GEMINI_ANALYZE_MODEL || defaultModel;
+  const mentorModel = process.env.GEMINI_MENTOR_MODEL || defaultModel;
+  const analyzeKeySrc = GEMINI_ANALYZE_API_KEY_EFFECTIVE ? "GEMINI_ANALYZE_API_KEY (set)" : "not configured";
+  const mentorKeySrc = GEMINI_MENTOR_API_KEY_EFFECTIVE ? "GEMINI_MENTOR_API_KEY (set)" : "not configured";
+  console.log(
+    `Gemini models — default: ${defaultModel}, analyze: ${analyzeModel}, mentor: ${mentorModel}`,
+  );
+  console.log(`Gemini API key routing — analyze: ${analyzeKeySrc}, mentor: ${mentorKeySrc}`);
 });
 
 function authorizeRequest(request, response) {
@@ -335,7 +347,7 @@ async function handleAnalyzeStart(request, response) {
     sendJson(response, 200, buildAnalyzeExtractionResponse({ title, runtimeMinutes, sourceType, theoryBeats, result, sourceMeta }));
   } catch (error) {
     sendJson(response, error.statusCode || 502, {
-      error: error.message || "Gemini解析に失敗しました。",
+      error: error.message || "構造の抽出に失敗しました。",
       beats: theoryBeats.map((beat) => ({ ...beat, actual: emptyActualBeat() })),
     });
   }
@@ -359,7 +371,7 @@ async function handleAnalyzeUpload(request, response) {
     const title = cleanText(fields.title || "") || cleanText(stripExtension(fileName)) || "";
     return sendJson(response, 200, { text: cleanText(text), title, fileName });
   } catch (error) {
-    return sendJson(response, error.statusCode || 502, { error: error.message || "ファイルの解析に失敗しました。" });
+    return sendJson(response, error.statusCode || 502, { error: error.message || "ファイルからテキストを読み取れませんでした。" });
   }
 }
 
@@ -767,6 +779,12 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
 あなたは「厳しいが、企画を通すために考えるプロデューサー」として振る舞います。
 ダメ出し装置でも、褒め装置でもない。企画の弱点を発見し、「次に何を直すべきか」の方向を示す。
 
+## 読む順番（このツールの前提）
+出力は「実戦企画レビュー」。AIレポートの丁寧さより、会議室に耐える圧縮情報を優先する。
+- 30秒相当で拾える結論：判定コメント・致命的論点・ファーストフィックスの芯が読めること。
+- 3分相当で拾える論点：想定詰問が会議の刺し方になっていること。
+- 10分相当で検証できる詳細：スコア説明・軸別コメント・海外適合などは短文でよい。
+
 ## 分析対象
 完成脚本ではなく、企画・プロット開発段階のテキスト。
 （ログライン、プロット、treatment、箱書き、企画書、アイデアメモなど）
@@ -776,7 +794,7 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
 以下のJSONのみ返してください（コードブロック不要）：
 {
   "criticalIssues": [
-    { "issue": "企画が最初に止まる理由（1〜2行、blunt）", "direction": "どこを掘れば改善できるか（1〜2行。正解は書かない。方向のみ）" }
+    { "issue": "一文で刺す（最大35字×2まで）。禁止：説明調・ connecting sentences。", "direction": "論点を最大2文。観客／市場のどこで崩れるかだけ。" }
   ],
   "scores": {
     "marketability": 0から100の整数,
@@ -812,18 +830,26 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
     "estimatedScale": "想定興行規模（例：単館系、10億〜50億円クラス等）"
   },
   "verdict": "GO" または "REWRITE" または "PASS",
-  "verdictReason": "判定理由（100〜150字、短文・実務的）",
+  "verdictReason": "一言総評（最大60字・実務）。長い説明禁止",
   "rewritePriorities": ["改善可能な事項1（短く）", "改善可能な事項2", "改善可能な事項3"],
-  "firstFix": "REWRITE判定の場合のみ記入。最初に直すべき一点のみ（2〜4行、blunt、実務的）。GO/PASSは空文字",
-  "corePotential": "この企画でまだ掘れる核を短く示す（2〜4行）。禁止：「魅力的」「素晴らしい」等のAI褒め。改善可能なプロデューサーコメントのみ",
+  "firstFix": "REWRITEなら必須：最初に直す一点のみ（命令調・最大3短文）。GO/PASSは空文字",
+  "corePotential": "慰め禁止。構造：①残る核を具体的に一言→②観客体験で詰まる点を一文（禁止：可能性を感じる／魅力的／期待／ポテンシャル／素晴らしい／頑張れば）",
   "interrogations": [
-    {
-      "type": "PRODUCER または SCREENWRITER または STREAMING EXEC または INTERNATIONAL SALES または MARKETING のいずれか",
-      "question": "この企画の弱点に直結した具体的な質問（一般論禁止）",
-      "reason": "なぜこの質問が飛んでくるか（1行、市場論・構造論で）"
-    }
+    { "type": "PRODUCER", "question": "で、何が怖いの？", "reason": "恐怖の芯が曖昧だと即落ちる" },
+    { "type": "SCREENWRITER", "question": "主人公、なんでそこ行くの？", "reason": "Motivation欠落は開発で止まる" },
+    { "type": "INTERNATIONAL SALES", "question": "その設定、海外で伝わる？", "reason": "説明コストが売りに直結" }
   ]
 }
+
+## JSONキー厳守（省略・別名禁止）
+- キー名はこのスキーマの **camelCase のみ**（snake_case や別名にしない）。
+- **criticalIssues はちょうど1件のみ**。配列の要素数は必ず1。
+- **horrorGlobalFit**：globalHook / imagePower / titleExportability それぞれに **score（0〜100の整数）と text（50〜80字）を必ず入れる**。score を省略したり null にしない。
+- uniqueDread.text と culturalLockRisk（level + text）も必須。
+- **boxOffice** の5フィールドはすべて短文で埋める（不明でも「入力不足のため仮置き」と書く）。
+- **interrogations はちょうど3件**。question と reason は必須。question は会議室の口調で短く刺す（丁寧語・説明調・AI質問禁止）。
+- **verdictReason** は一言総評として **最大60字**。空文字禁止。
+- **rewritePriorities（3件程度）**・**corePotential** は空文字禁止。
 
 ## 文体ルール（全フィールド共通）
 - 短文。1文1意。
@@ -834,11 +860,10 @@ Jホラーを世界市場へ押し上げてきた経験則、国際共同制作�
 - 悪い例：「主人公の欲求が弱い」で終わる
 - 良い例：「主人公の欲求が弱い。"何を失いたくないのか"を具体化すると観客導線が強くなる」
 
-## criticalIssues のルール
-- 最大2件のみ。最も危険な問題だけ。
-- 企画会議で最初に止まるポイント。
-- issue：1〜2行、blunt。
-- direction：正解を書かない。次に考える方向のみ。
+## criticalIssues のルール（最重要）
+- **ちょうど1件のみ**。最も危険な論点だけ。
+- issue：短く冷たく即断。原則は短文を複数に分割（例：「主人公導線が弱い。」「恐怖より先に設定説明へ意識が逃げる。」）。長い接続詞でつなぐ説明文は禁止。
+- direction：正解禁止。会議で詰められる論点の方向だけ。
 
 ## スコアリング基準（厳格に）
 - marketability: ハイコンセプト強度、差別化、世界市場射程。類似作品と区別できない企画は50以下。
@@ -881,24 +906,22 @@ REWRITE が標準。GO は強い企画のみ。PASS も必要なら出す。
   score：80以上で輸出可能、50以下は改名推奨
 
 ## corePotential のルール
-必ず記入する。空にしない。
-この企画で「まだ掘れる核」を短く示す。
-禁止：「魅力的」「素晴らしい」「期待できる」等のAI褒め。
-改善可能なプロデューサーコメントのみ。
-例：「"透明人間保険"という異常ワードの引力は存在している。現状は観客導線より先にルール説明負荷が来ている」
+必ず記入。空にしない。
+構造の型：**「（具体的な核）という一点は残る。」「問題は、（観客が体感する恐怖／ルール／関係性のどこ）がまだ手領にない。」**
+禁止語：可能性／魅力的／期待／ポテンシャル／素晴らしい／励まし／優しい評価。
+良い例：「『人生最後に泊まる部屋』という核は残る。問題は恐怖ルールを観客の体感として配線できているか。」
 
 ## 想定詰問（interrogations）のルール
-5〜8個生成。
+**ちょうど3件**。
 
 - typeは必ず以下のいずれか：PRODUCER / SCREENWRITER / STREAMING EXEC / INTERNATIONAL SALES / MARKETING
-- 入力された企画の弱点に直結させる。一般論禁止。
-- 口調はプロデューサー/ライターズルーム視点。人格攻撃なし。
-- reason：1行、市場論・構造論で。
+- question：**実戦の短い刺し**。口語・短文（15〜40字目安）。例「で、何が怖いの？」「それ映画になる？」「主人公、なんでそこ行くの？」
+- 禁止：ですます調の長い質問、教科書的リード文、「〜についてご説明ください」系。
+- reason：**刺さる理由を12〜28字**で市場論・構造論のみ。
 
 例：
-{ "type": "PRODUCER", "question": "主人公が受動的すぎる。なぜ彼がこの事件に関わらなければならないか説明してください", "reason": "Motivation不足の企画は開発段階で止まる" }
-{ "type": "STREAMING EXEC", "question": "1話ラストで次話再生されますか？そのフックはどこですか", "reason": "配信では継続視聴率が投資判断の最重要指標" }
-{ "type": "INTERNATIONAL SALES", "question": "海外ポスターで何を見せますか。なぜ日本発である必要があるのか", "reason": "海外説明コストが高い企画は国際共同制作の対象から外れる" }
+{ "type": "PRODUCER", "question": "主人公、なんでそこに行くの？", "reason": "Motivation欠落は開発で即死する" }
+{ "type": "INTERNATIONAL SALES", "question": "その設定、海外で伝わる？", "reason": "説明コストが売りに直結" }
 
 ## 最終目標
 これはAIによる肯定体験ではない。企画会議に近い圧力を再現し、ライターが会議前に弱点を発見・修正できる実戦訓練ツールとして機能すること。
@@ -912,8 +935,130 @@ function buildMentorPrompt({ title, sourceText }) {
   return lines.join("\n\n");
 }
 
+/** Mentor: score が欠落・文字列・別キーのときに復元。欠落時は null（クライアントで「—」表示）。 */
+function parseMentorScore(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  if (Number.isFinite(n)) return Math.max(0, Math.min(100, Math.round(n)));
+  const m = String(value).match(/(\d{1,3})/);
+  if (m) return Math.max(0, Math.min(100, Math.round(Number(m[1]))));
+  return null;
+}
+
+function mergeHorrorGlobalFitRaw(raw) {
+  const h =
+    raw.horrorGlobalFit ||
+    raw.horror_global_fit ||
+    raw.HorrorGlobalFit ||
+    raw.globalHorrorFit ||
+    {};
+  return typeof h === "object" && h !== null ? h : {};
+}
+
+function readHGScoreAxis(hg, ...fieldNames) {
+  let node;
+  for (const name of fieldNames) {
+    const v = hg[name];
+    if (v !== undefined && v !== null && v !== "") {
+      node = v;
+      break;
+    }
+  }
+  if (node === undefined || node === null) return { score: null, text: "" };
+  if (typeof node === "number") return { score: parseMentorScore(node), text: "" };
+  if (typeof node === "string") {
+    const t = cleanText(node);
+    const embedded = parseMentorScore(t);
+    return embedded !== null ? { score: embedded, text: "" } : { score: null, text: t };
+  }
+  const scoreVal = node.score ?? node.value ?? node.rating ?? node.percent;
+  const textVal = node.text ?? node.comment ?? node.note ?? node.reason ?? "";
+  return {
+    score: parseMentorScore(scoreVal),
+    text: cleanText(textVal),
+  };
+}
+
+function readUniqueDread(hg) {
+  const u = hg.uniqueDread ?? hg.unique_dread ?? hg.UniqueDread;
+  if (typeof u === "string") return cleanText(u);
+  return cleanText(u?.text || "");
+}
+
+function readCulturalLockRisk(hg) {
+  const c = hg.culturalLockRisk ?? hg.cultural_lock_risk ?? {};
+  let level = String(c.level || c.risk || "").trim().toUpperCase();
+  if (!["HIGH", "MEDIUM", "LOW"].includes(level)) {
+    if (/高|HIGH/i.test(level)) level = "HIGH";
+    else if (/低|LOW/i.test(level)) level = "LOW";
+    else level = "MEDIUM";
+  }
+  return {
+    level: ["HIGH", "MEDIUM", "LOW"].includes(level) ? level : "MEDIUM",
+    text: cleanText(c.text ?? c.comment ?? ""),
+  };
+}
+
+function mergeBoxOfficeRaw(raw) {
+  const b =
+    raw.boxOffice ||
+    raw.box_office ||
+    raw.BoxOffice ||
+    {};
+  return typeof b === "object" && b !== null ? b : {};
+}
+
+function normalizeInterrogations(raw) {
+  let arr = raw.interrogations ?? raw.pitchQuestions ?? raw.expectedQuestions ?? raw.interrogation_list;
+  if (!Array.isArray(arr) && typeof arr === "string") {
+    try {
+      const parsed = JSON.parse(arr);
+      arr = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      arr = [];
+    }
+  }
+  if (!Array.isArray(arr)) arr = [];
+  return arr
+    .map((item) => ({
+      type: cleanText(item?.type || item?.role || ""),
+      question: cleanText(item?.question || item?.q || item?.text || ""),
+      reason: cleanText(item?.reason || item?.why || ""),
+    }))
+    .filter((item) => item.question)
+    .slice(0, 3);
+}
+
+function normalizeRewritePriorities(raw) {
+  let arr = raw.rewritePriorities ?? raw.rewrite_priorities ?? raw.priorities ?? raw.improvements;
+  if (typeof arr === "string") {
+    arr = arr.split(/[,;\n]/).map((s) => cleanText(s)).filter(Boolean);
+  }
+  if (!Array.isArray(arr)) arr = [];
+  return arr.map(cleanText).filter(Boolean).slice(0, 6);
+}
+
 function normalizeMentorResponse(raw) {
   const scores = raw.scores || {};
+  const hg = mergeHorrorGlobalFitRaw(raw);
+  const gh = readHGScoreAxis(hg, "globalHook", "global_hook", "GlobalHook");
+  const ip = readHGScoreAxis(hg, "imagePower", "image_power", "ImagePower");
+  const te = readHGScoreAxis(hg, "titleExportability", "title_exportability", "TitleExportability");
+  const uniqueText = readUniqueDread(hg);
+  const clr = readCulturalLockRisk(hg);
+
+  let verdictReason = cleanText(raw.verdictReason || raw.reason || raw.verdict_reason || raw.justification || "");
+  if (!verdictReason) {
+    verdictReason = "一言総評が欠落。再査定してください。";
+  }
+
+  let corePotential = cleanText(raw.corePotential || raw.core_potential || "");
+  if (!corePotential) {
+    corePotential = "核の検証コメント欠落。ログライン一行と異常ルール一行を追記して再実行。";
+  }
+
+  const bo = mergeBoxOfficeRaw(raw);
+
   return {
     scores: {
       marketability: clampScore(scores.marketability),
@@ -935,31 +1080,27 @@ function normalizeMentorResponse(raw) {
       marketFit: cleanText(raw.highConceptAnalysis?.marketFit || ""),
     },
     horrorGlobalFit: {
-      globalHook: {
-        score: clampScore(raw.horrorGlobalFit?.globalHook?.score),
-        text: cleanText(raw.horrorGlobalFit?.globalHook?.text || ""),
+      globalHook: { score: gh.score, text: gh.text },
+      uniqueDread: {
+        text:
+          uniqueText ||
+          "モデルが固有の嫌悪感・差別化を返さなかった。企画の「誰にも似ていない一点」を一文で追記して再実行してください。",
       },
-      uniqueDread: { text: cleanText(raw.horrorGlobalFit?.uniqueDread?.text || "") },
-      imagePower: {
-        score: clampScore(raw.horrorGlobalFit?.imagePower?.score),
-        text: cleanText(raw.horrorGlobalFit?.imagePower?.text || ""),
-      },
+      imagePower: { score: ip.score, text: ip.text },
       culturalLockRisk: {
-        level: ["HIGH", "MEDIUM", "LOW"].includes(raw.horrorGlobalFit?.culturalLockRisk?.level)
-          ? raw.horrorGlobalFit.culturalLockRisk.level : "MEDIUM",
-        text: cleanText(raw.horrorGlobalFit?.culturalLockRisk?.text || ""),
+        level: clr.level,
+        text:
+          clr.text ||
+          "文化的ロックリスクの説明が省略された。海外観客への説明コストを自分で一文にしてください。",
       },
-      titleExportability: {
-        score: clampScore(raw.horrorGlobalFit?.titleExportability?.score),
-        text: cleanText(raw.horrorGlobalFit?.titleExportability?.text || ""),
-      },
+      titleExportability: { score: te.score, text: te.text },
     },
     boxOffice: {
-      targetAudience: cleanText(raw.boxOffice?.targetAudience || ""),
-      ageGender: cleanText(raw.boxOffice?.ageGender || ""),
-      domesticMarket: cleanText(raw.boxOffice?.domesticMarket || ""),
-      globalPotential: cleanText(raw.boxOffice?.globalPotential || ""),
-      estimatedScale: cleanText(raw.boxOffice?.estimatedScale || ""),
+      targetAudience: cleanText(bo.targetAudience || bo.target_audience || ""),
+      ageGender: cleanText(bo.ageGender || bo.age_gender || ""),
+      domesticMarket: cleanText(bo.domesticMarket || bo.domestic_market || ""),
+      globalPotential: cleanText(bo.globalPotential || bo.global_potential || ""),
+      estimatedScale: cleanText(bo.estimatedScale || bo.estimated_scale || ""),
     },
     criticalIssues: (Array.isArray(raw.criticalIssues) ? raw.criticalIssues : [])
       .map((item) => ({
@@ -967,20 +1108,13 @@ function normalizeMentorResponse(raw) {
         direction: cleanText(item?.direction || ""),
       }))
       .filter((item) => item.issue)
-      .slice(0, 2),
+      .slice(0, 1),
     verdict: ["GO", "REWRITE", "PASS"].includes(raw.verdict) ? raw.verdict : "REWRITE",
-    verdictReason: cleanText(raw.verdictReason || ""),
-    rewritePriorities: (Array.isArray(raw.rewritePriorities) ? raw.rewritePriorities : []).map(cleanText).filter(Boolean).slice(0, 6),
-    firstFix: cleanText(raw.firstFix || ""),
-    corePotential: cleanText(raw.corePotential || ""),
-    interrogations: (Array.isArray(raw.interrogations) ? raw.interrogations : [])
-      .map((item) => ({
-        type: cleanText(item?.type || ""),
-        question: cleanText(item?.question || ""),
-        reason: cleanText(item?.reason || ""),
-      }))
-      .filter((item) => item.question)
-      .slice(0, 8),
+    verdictReason,
+    rewritePriorities: normalizeRewritePriorities(raw),
+    firstFix: cleanText(raw.firstFix || raw.first_fix || ""),
+    corePotential,
+    interrogations: normalizeInterrogations(raw),
   };
 }
 
@@ -1024,7 +1158,7 @@ async function handleMentorAnalyze(request, response) {
 
     sendJson(response, 200, normalizeMentorResponse(result.json));
   } catch (error) {
-    sendJson(response, error.statusCode || 502, { error: error.message || "Mentor解析に失敗しました。" });
+    sendJson(response, error.statusCode || 502, { error: error.message || "査定に失敗しました。" });
   }
 }
 
@@ -1038,7 +1172,10 @@ function normalizeInput(value) {
 
 // ── Gemini usage tracking ──────────────────────────────────────────────────
 const USAGE_FILE = path.join(ROOT, ".gemini-usage.json");
-const GEMINI_DAILY_LIMIT = Number(process.env.GEMINI_DAILY_LIMIT) || 20;
+const GEMINI_ANALYZE_DAILY_LIMIT =
+  Number(process.env.GEMINI_ANALYZE_DAILY_LIMIT) || Number(process.env.GEMINI_DAILY_LIMIT) || 20;
+const GEMINI_MENTOR_DAILY_LIMIT =
+  Number(process.env.GEMINI_MENTOR_DAILY_LIMIT) || Number(process.env.GEMINI_DAILY_LIMIT) || 20;
 
 function todayJst() {
   return new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
@@ -1048,9 +1185,17 @@ function loadGeminiUsage() {
   try {
     const raw = fs.readFileSync(USAGE_FILE, "utf8");
     const data = JSON.parse(raw);
-    if (data.date === todayJst()) return data;
+    if (data.date === todayJst()) {
+      return {
+        date: data.date,
+        model: data.model || "",
+        count: Number(data.count) || 0,
+        analyzeCount: typeof data.analyzeCount === "number" ? data.analyzeCount : 0,
+        mentorCount: typeof data.mentorCount === "number" ? data.mentorCount : 0,
+      };
+    }
   } catch { /* file missing or parse error */ }
-  return { date: todayJst(), model: "", count: 0 };
+  return { date: todayJst(), model: "", count: 0, analyzeCount: 0, mentorCount: 0 };
 }
 
 function saveGeminiUsage(usage) {
@@ -1059,32 +1204,74 @@ function saveGeminiUsage(usage) {
 
 let geminiUsage = loadGeminiUsage();
 
-function incrementGeminiUsage(model) {
+function syncGeminiUsageToToday() {
   const today = todayJst();
   if (geminiUsage.date !== today) {
-    geminiUsage = { date: today, model, count: 0 };
+    geminiUsage = { date: today, model: "", count: 0, analyzeCount: 0, mentorCount: 0 };
+    saveGeminiUsage(geminiUsage);
   }
+}
+
+function assertGeminiQuotaAllowsRequest(purpose) {
+  syncGeminiUsageToToday();
+  if (typeof geminiUsage.analyzeCount !== "number") geminiUsage.analyzeCount = 0;
+  if (typeof geminiUsage.mentorCount !== "number") geminiUsage.mentorCount = 0;
+  if (purpose === "mentor") {
+    if (geminiUsage.mentorCount >= GEMINI_MENTOR_DAILY_LIMIT) {
+      const error = new Error(`本日の Mentor 利用上限（${GEMINI_MENTOR_DAILY_LIMIT}回）に達しました。`);
+      error.statusCode = 429;
+      throw error;
+    }
+  } else {
+    if (geminiUsage.analyzeCount >= GEMINI_ANALYZE_DAILY_LIMIT) {
+      const error = new Error(`本日の Analyze 利用上限（${GEMINI_ANALYZE_DAILY_LIMIT}回）に達しました。`);
+      error.statusCode = 429;
+      throw error;
+    }
+  }
+}
+
+function incrementGeminiUsage(model, purpose) {
+  syncGeminiUsageToToday();
+  const isMentor = purpose === "mentor";
+  if (typeof geminiUsage.analyzeCount !== "number") geminiUsage.analyzeCount = 0;
+  if (typeof geminiUsage.mentorCount !== "number") geminiUsage.mentorCount = 0;
   geminiUsage.model = model;
   geminiUsage.count += 1;
+  if (isMentor) geminiUsage.mentorCount += 1;
+  else geminiUsage.analyzeCount += 1;
   saveGeminiUsage(geminiUsage);
 }
 
 function handleGeminiUsage(_request, response) {
-  const today = todayJst();
-  if (geminiUsage.date !== today) geminiUsage = { date: today, model: geminiUsage.model, count: 0 };
+  syncGeminiUsageToToday();
+  if (typeof geminiUsage.analyzeCount !== "number") geminiUsage.analyzeCount = 0;
+  if (typeof geminiUsage.mentorCount !== "number") geminiUsage.mentorCount = 0;
   sendJson(response, 200, {
     date: geminiUsage.date,
     model: geminiUsage.model,
-    count: geminiUsage.count,
-    limit: GEMINI_DAILY_LIMIT,
+    count: geminiUsage.analyzeCount + geminiUsage.mentorCount,
+    analyzeCount: geminiUsage.analyzeCount,
+    mentorCount: geminiUsage.mentorCount,
+    analyzeLimit: GEMINI_ANALYZE_DAILY_LIMIT,
+    mentorLimit: GEMINI_MENTOR_DAILY_LIMIT,
+    limit: GEMINI_ANALYZE_DAILY_LIMIT + GEMINI_MENTOR_DAILY_LIMIT,
   });
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-function initializeGeminiClients({ apiKey, defaultModel, models = {} }) {
+function initializeGeminiClients({ analyzeApiKey, mentorApiKey, defaultModel, models = {} }) {
   return {
-    analyze: createGeminiClient({ apiKey, model: models.analyze || defaultModel, purpose: "analyze" }),
-    mentor: createGeminiClient({ apiKey, model: models.mentor || defaultModel, purpose: "mentor" }),
+    analyze: createGeminiClient({
+      apiKey: analyzeApiKey,
+      model: models.analyze || defaultModel,
+      purpose: "analyze",
+    }),
+    mentor: createGeminiClient({
+      apiKey: mentorApiKey,
+      model: models.mentor || defaultModel,
+      purpose: "mentor",
+    }),
   };
 }
 
@@ -1092,16 +1279,29 @@ function createGeminiClient({ apiKey, model, purpose }) {
   return {
     model,
     purpose,
-    generate: (options) => callGemini({ ...options, apiKey, model }),
+    generate: (options) => callGemini({ ...options, apiKey, model, purpose }),
   };
 }
 
-async function callGemini({ apiKey, model, systemInstruction, prompt, temperature = 0.35, responseMimeType = "application/json" }) {
+async function callGemini({
+  apiKey,
+  model,
+  purpose,
+  systemInstruction,
+  prompt,
+  temperature = 0.35,
+  responseMimeType = "application/json",
+}) {
   if (!apiKey) {
-    const error = new Error("GEMINI_API_KEY が設定されていません。環境変数にGemini APIキーを設定してください。");
+    const message =
+      purpose === "mentor"
+        ? "GEMINI_MENTOR_API_KEY を .env に設定してください。"
+        : "GEMINI_ANALYZE_API_KEY を .env に設定してください。";
+    const error = new Error(message);
     error.statusCode = 500;
     throw error;
   }
+  assertGeminiQuotaAllowsRequest(purpose);
   const isThinkingModel = /gemini-2\.5|gemini-3/i.test(model);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 120_000);
@@ -1143,7 +1343,7 @@ async function callGemini({ apiKey, model, systemInstruction, prompt, temperatur
     .map((part) => part.text || "")
     .join("\n")
     .trim();
-  incrementGeminiUsage(model);
+  incrementGeminiUsage(model, purpose);
   return {
     model,
     text,

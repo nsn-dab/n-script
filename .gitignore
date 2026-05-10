@@ -7,3 +7,5 @@ build/
 .env.*
 !.env.example
 recovery-backup/
+.gemini-usage.json
+skills/

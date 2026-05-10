@@ -1995,6 +1995,86 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
   opacity: 0.7;
 }
 
+/* ── Mentor: CRITICAL ISSUE ──────────────────────────────────────────────── */
+.mentor-critical-issues {
+  border: 1.5px solid rgba(229, 9, 20, 0.7);
+  border-radius: 8px;
+  background: rgba(229, 9, 20, 0.06);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+.mentor-critical-header {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #e50914;
+  margin-bottom: 12px;
+}
+.mentor-critical-item {
+  margin-bottom: 12px;
+}
+.mentor-critical-item:last-child { margin-bottom: 0; }
+.mentor-critical-issue-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--text-color, #e8e8e8);
+  margin: 0 0 6px;
+}
+.mentor-critical-direction {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid rgba(229, 9, 20, 0.35);
+}
+
+/* ── Mentor: スコアリスクラベル ─────────────────────────────────────────── */
+.mentor-score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.mentor-risk-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.mentor-risk-label.risk-danger  { background: rgba(229,9,20,0.15);   color: #e50914;  border: 1px solid rgba(229,9,20,0.4); }
+.mentor-risk-label.risk-watch   { background: rgba(245,158,11,0.12); color: #f59e0b;  border: 1px solid rgba(245,158,11,0.4); }
+.mentor-risk-label.risk-ok      { background: rgba(255,255,255,0.06);color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15); }
+.mentor-risk-label.risk-strong  { background: rgba(16,185,129,0.1);  color: #10b981;  border: 1px solid rgba(16,185,129,0.35); }
+
+/* ── Mentor: FIRST FIX ───────────────────────────────────────────────────── */
+.mentor-firstfix {
+  margin: 14px 0;
+  padding: 14px 16px;
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+}
+.mentor-firstfix-label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f59e0b;
+  margin-bottom: 8px;
+}
+.mentor-firstfix-text {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text-color, #e8e8e8);
+  margin: 0;
+  white-space: pre-line;
+}
+
 /* ── Mentor: 想定詰問 ────────────────────────────────────────────────────── */
 .mentor-interrogation-intro {
   font-size: 0.78rem;
@@ -2017,11 +2097,12 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
 .mentor-interrogation-q {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .mentor-interrogation-num {
   flex-shrink: 0;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: #e50914;
@@ -2029,8 +2110,25 @@ h2 { margin-bottom: 0; font-size: 1.08rem; }
   border: 1px solid rgba(229, 9, 20, 0.3);
   border-radius: 4px;
   padding: 2px 6px;
-  margin-top: 1px;
+  margin-top: 2px;
 }
+.mentor-interrogation-type {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-top: 2px;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.mentor-interrogation-type.streaming-exec { color: #60a5fa; border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.08); }
+.mentor-interrogation-type.international-sales { color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
+.mentor-interrogation-type.marketing { color: #34d399; border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.08); }
+.mentor-interrogation-type.producer { color: #f87171; border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
+.mentor-interrogation-type.screenwriter { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.08); }
 .mentor-interrogation-text {
   font-size: 0.88rem;
   line-height: 1.6;

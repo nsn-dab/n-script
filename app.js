@@ -1936,6 +1936,8 @@ const mentorBoxOffice = document.querySelector("#mentorBoxOffice");
 const mentorVerdictBlock = document.querySelector("#mentorVerdictBlock");
 const mentorPriorities = document.querySelector("#mentorPriorities");
 const mentorInterrogations = document.querySelector("#mentorInterrogations");
+const mentorCriticalIssues = document.querySelector("#mentorCriticalIssues");
+const mentorFirstFix = document.querySelector("#mentorFirstFix");
 const mentorHistory = document.querySelector("#mentorHistory");
 const mentorHistoryList = document.querySelector("#mentorHistoryList");
 
@@ -2065,13 +2067,14 @@ mentorResetButton?.addEventListener("click", () => {
 
 function renderMentorResults(data, title, skipSave = false) {
   if (mentorResultsTitle) mentorResultsTitle.textContent = title || "無題";
+  renderMentorCriticalIssues(data.criticalIssues);
   renderMentorRadar(data.scores);
   renderMentorScores(data.scores);
   renderMentorHighConcept(data.highConceptAnalysis);
   renderMentorAnalyses(data.analyses, data.scores);
   renderMentorBoxOffice(data.boxOffice);
   renderMentorInterrogations(data.interrogations);
-  renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities);
+  renderMentorVerdict(data.verdict, data.verdictReason, data.rewritePriorities, data.firstFix);
   mentorBusy?.classList.add("hidden");
   mentorResults?.classList.remove("hidden");
   mentorResults?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2119,11 +2122,11 @@ function renderMentorHistory() {
 }
 
 const MENTOR_AXES = [
-  { key: "marketability", label: "市場性" },
-  { key: "emotionalEngineering", label: "感情設計" },
-  { key: "firstTenPages", label: "冒頭フック" },
-  { key: "realityCheck", label: "リアリティ" },
-  { key: "structure", label: "構造" },
+  { key: "marketability",        label: "市場性",    risks: ["MARKET RISK",    "MARKET WATCH",   "MARKET OK",    "MARKET STRONG"] },
+  { key: "emotionalEngineering", label: "感情設計",  risks: ["HOOK FAILURE",   "HOOK WEAK",      "HOOK OK",      "HOOK STRONG"]   },
+  { key: "firstTenPages",        label: "冒頭フック", risks: ["OPEN COLLAPSE",  "OPEN WEAK",      "OPEN OK",      "OPEN STRONG"]   },
+  { key: "realityCheck",         label: "リアリティ", risks: ["LOGIC BREAK",    "LOGIC WATCH",    "LOGIC OK",     "LOGIC TIGHT"]   },
+  { key: "structure",            label: "構造",      risks: ["STRUCT COLLAPSE", "STRUCT WEAK",    "STRUCT OK",    "STRUCT SOLID"]  },
 ];
 
 const MENTOR_ANALYSIS_LABELS = [
@@ -2170,15 +2173,26 @@ function renderMentorRadar(scores) {
   mentorRadarSvg.innerHTML = svg;
 }
 
+function getRiskLabel(risks, val) {
+  if (val >= 80) return { text: risks[3], cls: "risk-strong" };
+  if (val >= 65) return { text: risks[2], cls: "risk-ok" };
+  if (val >= 40) return { text: risks[1], cls: "risk-watch" };
+  return { text: risks[0], cls: "risk-danger" };
+}
+
 function renderMentorScores(scores) {
   if (!mentorScores) return;
-  mentorScores.innerHTML = MENTOR_AXES.map(({ key, label }) => {
+  mentorScores.innerHTML = MENTOR_AXES.map(({ key, label, risks }) => {
     const val = Number(scores?.[key]) || 0;
-    const colorClass = val >= 65 ? "" : val >= 40 ? "score-mid" : "score-low";
+    const { text: riskText, cls: riskCls } = getRiskLabel(risks, val);
+    const barCls = val >= 65 ? "" : val >= 40 ? "score-mid" : "score-low";
     return `<div class="mentor-score-item">
-      <span class="mentor-score-label">${label}</span>
+      <div class="mentor-score-header">
+        <span class="mentor-score-label">${label}</span>
+        <span class="mentor-risk-label ${riskCls}">${riskText}</span>
+      </div>
       <div class="mentor-score-bar-wrap">
-        <div class="mentor-score-bar-bg"><div class="mentor-score-bar-fill ${colorClass}" style="width:${val}%"></div></div>
+        <div class="mentor-score-bar-bg"><div class="mentor-score-bar-fill ${barCls}" style="width:${val}%"></div></div>
         <span class="mentor-score-value">${val}</span>
       </div>
     </div>`;
@@ -2235,19 +2249,45 @@ function renderMentorBoxOffice(bo) {
   ).join("");
 }
 
-function renderMentorVerdict(verdict, reason, priorities) {
+function renderMentorVerdict(verdict, reason, priorities, firstFix) {
   if (mentorVerdictBlock) {
     const cls = (verdict || "").toLowerCase();
     mentorVerdictBlock.innerHTML = `
       <div class="mentor-verdict-badge ${cls}">${verdict || "—"}</div>
       <p class="mentor-verdict-reason">${escapeHtml(reason || "")}</p>`;
   }
+  // FIRST FIX: REWRITE判定時のみ表示
+  if (mentorFirstFix) {
+    const showFirstFix = verdict === "REWRITE" && firstFix;
+    mentorFirstFix.classList.toggle("hidden", !showFirstFix);
+    if (showFirstFix) {
+      mentorFirstFix.innerHTML = `
+        <div class="mentor-firstfix-label">FIRST FIX</div>
+        <p class="mentor-firstfix-text">${escapeHtml(firstFix)}</p>`;
+    }
+  }
   if (mentorPriorities && Array.isArray(priorities) && priorities.length) {
-    mentorPriorities.innerHTML = `<p class="mentor-priorities-label">改稿優先順位</p>` +
+    mentorPriorities.innerHTML = `<p class="mentor-priorities-label">改善可能な事項</p>` +
       priorities.map((p, i) =>
         `<div class="mentor-priority-item"><span class="mentor-priority-num">${i + 1}</span><span>${escapeHtml(p)}</span></div>`,
       ).join("");
   }
+}
+
+function renderMentorCriticalIssues(items) {
+  if (!mentorCriticalIssues) return;
+  if (!Array.isArray(items) || !items.length) {
+    mentorCriticalIssues.classList.add("hidden");
+    return;
+  }
+  mentorCriticalIssues.classList.remove("hidden");
+  mentorCriticalIssues.innerHTML =
+    `<div class="mentor-critical-header">CRITICAL ISSUE</div>` +
+    items.map((item) => `
+      <div class="mentor-critical-item">
+        <p class="mentor-critical-issue-text">${escapeHtml(item.issue)}</p>
+        ${item.direction ? `<p class="mentor-critical-direction">${escapeHtml(item.direction)}</p>` : ""}
+      </div>`).join("");
 }
 
 function renderMentorInterrogations(items) {
@@ -2256,14 +2296,18 @@ function renderMentorInterrogations(items) {
     mentorInterrogations.innerHTML = "";
     return;
   }
-  mentorInterrogations.innerHTML = items.map((item, i) => `
+  mentorInterrogations.innerHTML = items.map((item, i) => {
+    const typeCls = (item.type || "").toLowerCase().replace(/\s+/g, "-");
+    return `
     <div class="mentor-interrogation-item">
       <div class="mentor-interrogation-q">
         <span class="mentor-interrogation-num">Q${i + 1}</span>
+        ${item.type ? `<span class="mentor-interrogation-type ${typeCls}">${escapeHtml(item.type)}</span>` : ""}
         <span class="mentor-interrogation-text">${escapeHtml(item.question)}</span>
       </div>
       ${item.reason ? `<div class="mentor-interrogation-reason">${escapeHtml(item.reason)}</div>` : ""}
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function escapeHtml(str) {

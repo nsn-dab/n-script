@@ -380,6 +380,9 @@
                 <button class="secondary-button" id="mentorResetButton" type="button">新しい企画を入力</button>
               </div>
 
+              <!-- CRITICAL ISSUE: 最初に止まる理由（スコアより上） -->
+              <div class="mentor-critical-issues hidden" id="mentorCriticalIssues"></div>
+
               <!-- Section 1: Analysis report -->
               <div class="mentor-section">
                 <h3 class="mentor-section-heading">① 分析レポート</h3>
@@ -403,7 +406,7 @@
               <!-- Section 3: Interrogations -->
               <div class="mentor-section">
                 <h3 class="mentor-section-heading">③ 想定詰問</h3>
-                <p class="mentor-interrogation-intro">企画会議・ライターズルームで実際に飛んでくる質問。事前に回答を用意してください。</p>
+                <p class="mentor-interrogation-intro">企画会議・ライターズルームで飛んでくる弾。事前に回答を用意してください。</p>
                 <div class="mentor-interrogations" id="mentorInterrogations"></div>
               </div>
 
@@ -411,6 +414,8 @@
               <div class="mentor-section">
                 <h3 class="mentor-section-heading">④ 最終判定</h3>
                 <div class="mentor-verdict-block" id="mentorVerdictBlock"></div>
+                <!-- FIRST FIX: REWRITE判定時のみ表示 -->
+                <div class="mentor-firstfix hidden" id="mentorFirstFix"></div>
                 <div class="mentor-priorities" id="mentorPriorities"></div>
               </div>
             </div>

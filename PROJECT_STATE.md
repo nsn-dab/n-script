@@ -87,7 +87,7 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 - Analyze詳細の15ビート行にも実測、理論、差分を表示する
 - Manualの15ビートメモからGeminiで100文字前後のログラインを生成する `/api/analyze/logline` を用意済み
 - 保存済みAnalyzeカードはカード全体クリックでDiscover詳細と同じ全画面詳細を表示。詳細下部に編集と削除を配置し、編集は通常モーダルで行う
-- Scriptは映画タイトルによる外部脚本DB取得、または脚本ファイルの選択/ドラッグ&ドロップアップロードからGemini解析する構成
+- Scriptは映画タイトルによる外部脚本DB取得、または脚本ファイルの選択/ドラッグ&ドロップアップロードからGemini解析する構成。脚本DB取得は実装完了済み
 - ScriptモードではManual用のruntime、ログライン入力、AIログライン生成ボタンは表示しない。タイトル欄は脚本DB検索用として使い、ファイル解析時はファイル名からタイトルを補完できる
 - Script DBモードではタイトル検索からTMDb候補を出し、選択した作品の原題・年も使って脚本DB検索を行う
 - Script DB取得は `/api/analyze/script-db/fetch` で実行し、取得した脚本本文は一時セッションIDで保持する。ユーザー確認後に `/api/analyze/start` へ渡してGemini抽出する
@@ -97,7 +97,8 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 - Scriptアップロードは `.txt/.md/.fountain/.fdx/.rtf/.pdf/.docx/.pptx` を対象に、テキスト抽出後にAnalyzeへ渡す（スキャンPDF/OCRは対象外）
 - Videoルートは現行UIから一旦外している。yt-dlp、Gemini動画解析は次段階
 - Mentorは履歴リスト、GO/REWRITE/PASSフィルター、検索、並び順、新規査定モーダル、詳細フルスクリーン表示、削除を実装済み
-- Mentorはテキスト入力またはファイルアップロードから `/api/mentor/analyze` でGemini査定し、履歴をlocalStorageに保存する
+- Mentorはテキスト入力またはファイルアップロードから `/api/mentor/analyze` でGemini査定し、履歴をSupabase共有データに保存する
+- Mentor実装自体は完了済み。現在はレポートの分析観点、文章の出し方、外観、構成を調整中
 - Mentor詳細は判定、理由、重大課題、最初に直す一点、想定詰問、5軸スコア、ハイコンセプト分析、ホラー/グローバル適性、興行シミュレーション、コアポテンシャル、書き直し優先順位を表示する
 - Gemini API連携基盤。Analyze抽出は `/api/analyze/extract` / `/api/analyze/start`、Analyzeログライン生成は `/api/analyze/logline`、Mentor査定は `/api/mentor/analyze` のPOSTエンドポイント
 - `/api/analyze/extract` は脚本テキストまたは動画解析データから15ビートを抽出し、各ビートに `theory`（上映時間から算出した理論タイム）と `actual`（Geminiが抽出した実測タイム・要約）を並べて返す
@@ -113,6 +114,7 @@ Macでは `N Script.app` または `N Script.command` からも起動できる�
 - Render環境変数に `SUPABASE_URL` と `SUPABASE_SERVICE_ROLE_KEY` を設定する
 - Supabase側には `app_state (key text primary key, json jsonb, updated_at timestamptz)` テーブルを用意する
 - Supabase未設定のローカル開発時のみ `nscript-data.local.json`（Git管理しない）へフォールバック保存する
+- Render公開URLでSupabase共有保存は動作確認済み。PCとスマホで同じデータを表示できることを確認済み
 - 共有保存API: `GET /api/shared-data` / `PUT /api/shared-data`
 - 共有保存データ: `movies`, `analyzeItems`, `mentorHistory`
 - 旧localStorageキー `movie-shelf-items`, `reverse-beats`, `mentor-history` は初回移行元として読む
@@ -178,8 +180,8 @@ node server.js
 
 ### Phase 1: Beta安定化（ローカル + 限定共有）
 
-- Scriptの2ルート（脚本DB / Upload）を安定運用し、PDF/DOCX/PPTX抽出の失敗ケースを潰す
-- Mentorの3ステップ（モード選択→レポート→シミュレーション）をMVPで実装する
+- Scriptの2ルート（脚本DB / Upload）は実装済み。今後は安定運用し、PDF/DOCX/PPTX抽出の失敗ケースを潰す
+- MentorはMVP実装済み。今後はレポートの分析方法、外観、情報構成をチューニングする
 - Global Chat（常設）とMentor内Contextual Chat（限定）を分離実装する
 - 共有Supabase保存の運用確認と、複数端末同時編集時の上書きリスクを確認する
 - 失敗時メッセージ、ロード状態、再試行導線などUXの最低品質を揃える
